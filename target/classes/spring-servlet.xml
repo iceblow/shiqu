@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee" xmlns:context="http://www.springframework.org/schema/context" xmlns:p="http://www.springframework.org/schema/p" xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-2.5.xsd
+	http://www.springframework.org/schema/jee
+	http://www.springframework.org/schema/jee/spring-jee-4.1.xsd
+	http://www.springframework.org/schema/mvc
+	http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+	http://www.springframework.org/schema/util 
+	http://www.springframework.org/schema/util/spring-util-4.1.xsd
+	http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-4.1.xsd">
+
+	<context:annotation-config />
+	<context:component-scan base-package="com.daoshun.shiqu.*" />
+	<mvc:annotation-driven />
+
+	<!-- mapping styles映射到styles文件夹 -->
+	<mvc:resources mapping="/styles/**" location="/styles/" />
+	<!-- mapping js映射到js文件夹 -->
+	<mvc:resources mapping="/js/**" location="/js/" />
+	<!-- mapping imgs映射到imgs文件夹 -->
+	<mvc:resources mapping="/imgs/**" location="/imgs/" />
+	<!-- mapping font映射到font文件夹 -->
+	<mvc:resources mapping="/fonts/**" location="/fonts/" />
+	<!-- mapping admin映射到admin文件夹 -->
+	<mvc:resources mapping="/manage/**" location="/manage/" />
+	<!-- mapping shop映射到shop文件夹 -->
+	<mvc:resources mapping="/shop/**" location="/shop/" />
+	<!-- mapping shop映射到shop文件夹 -->
+	<mvc:resources mapping="/wap/**" location="/wap/" />
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="defaultEncoding" value="utf-8"></property>
+		<property name="maxUploadSize" value="10485760000"></property>
+		<property name="maxInMemorySize" value="40960"></property>
+	</bean>
+	<!-- 拦截器 -->
+	<mvc:interceptors>
+		<!-- session超时 -->
+		<mvc:interceptor>
+			<!-- 如果不配置或/*,将拦截所有的Controller -->
+			<!-- 需拦截的地址 -->
+			<mvc:mapping path="/*" />
+			<!-- 需排除拦截的地址 -->
+			<mvc:exclude-mapping path="/login.jsp" />
+			<bean class="com.daoshun.shiqu.controller.SessionInterceptorAction">
+				<property name="allowUrls">
+					<list>
+						<!-- 如果请求中包含以下路径，则不进行拦截 -->
+						<value>/login</value>
+						<value>/login.jsp</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:interceptor>
+
+		<!-- 后台管理的拦截器 -->
+		<mvc:interceptor>
+			<mvc:mapping path="/manage/*" />
+			<!-- 需排除拦截的地址 -->
+			<mvc:exclude-mapping path="/login.jsp" />
+			<bean class="com.daoshun.shiqu.controller.admin.ManageSessionInterceptor">
+				<property name="allowUrls">
+					<list>
+						<!-- 如果请求中包含以下路径，则不进行拦截 -->
+						<value>/login</value>
+						<value>/index</value>
+						<value>/login.jsp</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:interceptor>
+
+
+		<mvc:interceptor>
+			<!-- 如果不配置或/*,将拦截所有的Controller -->
+			<!-- 需拦截的地址 -->
+			<mvc:mapping path="/shop/*" />
+			<!-- 需排除拦截的地址 -->
+			<mvc:exclude-mapping path="/login.jsp" />
+			<bean class="com.daoshun.shiqu.controller.shop.SessionInterceptorAction">
+				<property name="allowUrls">
+					<list>
+						<!-- 如果请求中包含以下路径，则不进行拦截 -->
+						<value>/login</value>
+						<value>/index</value>
+						<value>/login.jsp</value>
+						<value>/top.jsp</value>
+						<value>/index.jsp</value>
+						<value>/shopindex.jsp</value>
+						<value>/shopleft.jsp</value>
+						<value>/imgupload</value>
+						<value>/dishesleft.jsp</value>
+						<value>/dishesindex.jsp</value>
+						<value>/changeArea</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+</beans>

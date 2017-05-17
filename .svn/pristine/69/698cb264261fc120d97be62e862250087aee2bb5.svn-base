@@ -1,0 +1,35 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.service.manage;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.service.BaseService;
+
+/**
+ * 后台管理商家Service
+ * 
+ * @author qiuch
+ *
+ */
+@Service("maShopService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class MaShopService extends BaseService {
+
+	public QueryResult<Store> getShopList(Integer page, String keywords, Integer type) {
+		int pagenum = 1;
+		if (page != null) {
+			pagenum = page;
+		}
+		String hql = "from Store where del_flg = 0 order by create_time desc";
+		List<Store> dataList = (List<Store>) dataDao.pageQueryViaParam(hql, 15, pagenum, null);
+		return new QueryResult<Store>(dataList, dataDao.getCount("select count(store_id) from Store where del_flg = 0 "));
+	}
+}

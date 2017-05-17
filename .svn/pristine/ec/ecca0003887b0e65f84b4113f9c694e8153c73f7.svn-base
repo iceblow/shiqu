@@ -1,0 +1,136 @@
+package com.daoshun.shiqu.controller.shop;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.controller.ApiBaseController;
+import com.daoshun.shiqu.pojo.AreaInfo;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreCategory;
+import com.daoshun.shiqu.pojo.StorePic;
+import com.daoshun.shiqu.service.CommonService;
+import com.daoshun.shiqu.service.StoreService;
+
+@Controller
+@RequestMapping("/shop")
+public class ShopManage extends ApiBaseController{
+
+	@Resource(name="storeService")
+	StoreService storeService;
+	
+	@Resource(name="commonService")
+	CommonService commonService;
+	
+	@RequestMapping("/detail")
+	public ModelAndView detail(HttpSession session){
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ; 
+		Store store = storeService.getStoreById(shopid);
+		ModelAndView mov = new ModelAndView();
+		mov.addObject("store", store);
+		mov.setViewName("/shop/shopDetail");
+		return mov;
+	}
+	
+	@RequestMapping("/lookdetail")
+	public ModelAndView lookdetail(String phone,String password,HttpSession session){
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ; 
+		Store store = storeService.getStoreById(shopid);
+		List<StoreCategory> categorylist = storeService.getCategory();
+		ModelAndView mov = new ModelAndView();
+		List<AreaInfo> proviencelist = commonService.getAreaByParentid(0);
+		mov.addObject("categorylist", categorylist);
+		mov.addObject("proviencelist", proviencelist);
+		if(store.getProvienceid()>0){
+			List<AreaInfo> citylist = commonService.getAreaByParentid(store.getProvienceid());
+			mov.addObject("citylist", citylist);
+		}
+		if(store.getCityid()>0){
+			List<AreaInfo> arealist = commonService.getAreaByParentid(store.getCityid());
+			mov.addObject("arealist", arealist);
+		}
+		mov.addObject("store", store);
+		mov.setViewName("/shop/shopEdit");
+		return mov;
+	}
+	
+	@RequestMapping("/savestore")
+	public ModelAndView savestore(Store store,Long[] picid ){
+		ModelAndView mov = new ModelAndView();
+		Store updatestore = storeService.getStoreById(store.getStore_id());
+		updatestore.setStore_name(store.getStore_name());
+		updatestore.setIntro(store.getIntro());
+		updatestore.setPic(store.getPic());
+		updatestore.setCategory_id(store.getCategory_id());
+		if(updatestore.getCategory_id()!=store.getCategory_id()){
+			StoreCategory storecategory = storeService.getStoreCategoryById(store.getCategory_id());
+			updatestore.setCategory_name(storecategory.getName());
+		}
+		updatestore.setLatitude(store.getLatitude());
+		updatestore.setLongitude(store.getLongitude());
+		updatestore.setPhone(store.getPhone());
+		updatestore.setProvienceid(store.getProvienceid());
+		updatestore.setCityid(store.getCityid());
+		updatestore.setAreaid(store.getAreaid());
+		String area = "";
+		if(store.getProvienceid()>0){
+			AreaInfo areainfo = commonService.getAreaInfoById(store.getProvienceid());
+			area += areainfo.getName();
+		}
+		if(store.getCityid()>0){
+			AreaInfo areainfo = commonService.getAreaInfoById(store.getCityid());
+			area += areainfo.getName();
+		}
+		if(store.getAreaid()>0){
+			AreaInfo areainfo = commonService.getAreaInfoById(store.getAreaid());
+			area += areainfo.getName();
+		}
+		updatestore.setArea(area);
+		updatestore.setAddress(store.getAddress());
+		updatestore.setOpen_time(store.getOpen_time());
+		updatestore.setClose_time(store.getClose_time());
+		updatestore.setIs_out(store.getIs_out());
+		updatestore.setSend_time(store.getSend_time());
+		updatestore.setMin_send(store.getMin_send());
+		updatestore.setSend_money(store.getSend_money());
+		updatestore.setUpdate_time(new Date());
+		List<StorePic> oldstorepic = updatestore.getStorepic_list();
+		List<Long> oldpicid = new ArrayList<Long>();
+		for(StorePic storepic:oldstorepic){
+			oldpicid.add(storepic.getPic_id());
+		}
+		List<Long> clist = new ArrayList<Long>();
+		Collections.copy(clist, oldpicid);
+		List<Long> newpicid = new ArrayList(Arrays.asList(picid));
+		oldpicid.removeAll(newpicid);
+		newpicid.removeAll(clist);
+		return mov;
+	}
+	
+	@RequestMapping("/imgupload")
+	public void imgupload(HttpServletResponse response, @RequestParam(value = "imgfile", required = false) MultipartFile imgfile){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		if(imgfile != null && !imgfile.isEmpty()){
+			long picid = getFileId(imgfile, 1);
+			result.put("code", 1);
+			result.put("picid", picid);
+		}
+		CommonUtils.setMaptoJson(response, result);
+	}
+	
+	
+}

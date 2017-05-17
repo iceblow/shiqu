@@ -1,0 +1,54 @@
+package com.daoshun.shiqu.service;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Coupon;
+import com.daoshun.shiqu.pojo.MyCoupon;
+
+@Service("couponService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class CouponService extends BaseService{
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<Coupon> getCouponListByPage(long store_id, Integer pageIndex, int pageSize) {
+		String hql = " from Coupon where store_id = :store_id order by from_time desc";
+		String[] params = new String[]{"store_id"};
+		List<Coupon> list = (List<Coupon>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, params, store_id);
+		if(list != null && list.size() > 0){
+			for (Coupon coupon : list) {
+				String MyCouponhql = "select count(*) from MyCoupon where coupon_id = :coupon_id";
+				long usecount = (long) dataDao.getFirstObjectViaParam(MyCouponhql, new String[]{"coupon_id"}, coupon.getCoupon_id());
+				coupon.setUsecount((int)usecount);
+			}
+		}
+		String counthql = " select count(*) "+hql;
+		long count = (long) dataDao.getFirstObjectViaParam(counthql, params, store_id);
+		QueryResult<Coupon> result = new QueryResult<Coupon>(list, (int) count);
+		return result;
+	}
+
+	public Coupon getCouponById(Long coupon_id) {
+		Coupon info = dataDao.getObjectById(Coupon.class, coupon_id);
+		return info;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void updateCoupon(Coupon coupon) {
+		dataDao.updateObject(coupon);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addCoupon(Coupon coupon) {
+		dataDao.addObject(coupon);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addMyCoupon(MyCoupon mycoupon) {
+		dataDao.addObject(mycoupon);
+	}
+
+}

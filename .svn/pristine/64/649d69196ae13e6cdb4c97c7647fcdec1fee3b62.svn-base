@@ -1,0 +1,78 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.pojo;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * 每日统计信息
+ * 
+ * @author qiuch
+ *
+ */
+@Entity
+@Table(name = "t_daily_statistics")
+public class DailyStatistics {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", length = 20, nullable = false)
+	private long id;
+	@Column(name = "store_id", length = 20, nullable = false)
+	private long store_id;
+	// 当日总销售额
+	@Column(name = "total_sell")
+	private float total_sell;
+	// 当日顾客数
+	@Column(name = "total_customers")
+	private int total_customers;
+	// 当日下单数
+	@Column(name = "total_order")
+	private int total_order;
+
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
+	}
+
+	public long getStore_id() {
+		return store_id;
+	}
+
+	public void setStore_id(long store_id) {
+		this.store_id = store_id;
+	}
+
+	public float getTotal_sell() {
+		return total_sell;
+	}
+
+	public void setTotal_sell(float total_sell) {
+		this.total_sell = total_sell;
+	}
+
+	public int getTotal_customers() {
+		return total_customers;
+	}
+
+	public void setTotal_customers(int total_customers) {
+		this.total_customers = total_customers;
+	}
+
+	public int getTotal_order() {
+		return total_order;
+	}
+
+	public void setTotal_order(int total_order) {
+		this.total_order = total_order;
+	}
+}

@@ -1,0 +1,24 @@
+@CHARSET "UTF-8";
+
+body{
+/* 	background:url(../imgs/love_background.png) no-repeat; */
+/* 	background-size: cover; */
+	font-size: 14px;
+	font-family: "微软雅黑";
+	padding: 0;
+	margin: 0;
+}
+
+.fixedposition{
+	background-color:#efefef;
+	padding-left:3.75%;
+	font-size:12px;
+	padding-right:3.75%;
+	height:34px;
+	line-height:34px;
+}
+
+.orderlist{
+	position:relative;
+	width:100%;
+}

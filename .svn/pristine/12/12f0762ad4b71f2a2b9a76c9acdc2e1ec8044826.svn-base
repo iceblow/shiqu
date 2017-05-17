@@ -1,0 +1,27 @@
+package com.daoshun.shiqu.service;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreUser;
+
+/**
+ * @author wangcl
+ *
+ */
+@Service("storeUserService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class StoreUserService extends BaseService  {
+
+	public StoreUser getStoreUserByPhone(String phone)  {
+		StoreUser storeUser = (StoreUser) dataDao.getFirstObjectViaParam("from StoreUser where phone = :phone ", new String[] { "phone" }, phone);
+		return storeUser;
+	}
+	
+	public Store getStoreById(long store_id){
+		Store store = dataDao.getObjectById(Store.class, store_id);
+		return store;
+	}
+}

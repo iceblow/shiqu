@@ -1,0 +1,616 @@
+package com.daoshun.shiqu.controller.admin;
+
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.management.Query;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.AgentInfo;
+import com.daoshun.shiqu.pojo.AgentStoreRelate;
+import com.daoshun.shiqu.pojo.HeadShopRelate;
+import com.daoshun.shiqu.pojo.HeadStore;
+import com.daoshun.shiqu.pojo.ManageUser;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreCategory;
+import com.daoshun.shiqu.service.manage.MaShopService;
+import com.google.gson.Gson;
+
+@Controller
+public class ManageShopController extends ManageBaseController {
+
+	@Resource(name = "maShopService")
+	private MaShopService maShopService;
+
+	@RequestMapping("/shoplist")
+	public ModelAndView shoplist(Integer pageIndex, String keywords, Long category_id) {
+		ModelAndView mov = new ModelAndView();
+		if(category_id == null){
+			category_id = Long.valueOf(0);
+		}
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Store> result = maShopService.getShopList(pageIndex, keywords, category_id);
+		mov.addObject("result", result);
+		long pageCount = (result.getTotal() + (Constants.ADMINLISTNUM - 1)) / Constants.ADMINLISTNUM;
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("pageIndex", pageIndex);
+		List<StoreCategory> categorylist= maShopService.getStoreCategoryList();
+		mov.addObject("categorylist", categorylist);
+		mov.addObject("keywords", keywords);
+		mov.addObject("category_id", category_id);
+		if(category_id != 0){
+			StoreCategory category = maShopService.getStoreCategoryById(category_id);
+			mov.addObject("category_name", category.getName());
+		}
+		mov.setViewName("/manage/shoplist");
+		return mov;
+	}
+
+	@RequestMapping("/addshop")
+	public ModelAndView addShop(String store_name) {
+		ModelAndView mov = new ModelAndView();
+		maShopService.addShop(store_name);
+		mov.addObject("result", maShopService.getShopList(1, null, 0));
+		mov.setViewName("redirect:/manage/shoplist");
+		return mov;
+	}
+
+	@RequestMapping("/editshop")
+	public ModelAndView editShop(long adminId, String name, String password, int privilege) {
+		ModelAndView mov = new ModelAndView();
+		mov.setViewName("redirect:/manage/shoplist");
+		return mov;
+	}
+
+	@RequestMapping("/delshop")
+	public void delShop(Long store_id, HttpServletResponse response) {
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		String message = "";
+		if(store_id != null){
+			Store store = maShopService.getStoreById(store_id);
+			if(store == null){
+				result.put("code", 102);
+				message = "商店不存在";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}else{
+				store.setDel_flg(1);
+				maShopService.updateStore(store);
+				result.put("code", 1);
+				message = "删除成功";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}
+		}else{
+			result.put("code", 102);
+			message = "商店不存在";
+			result.put("message", message);
+			CommonUtils.setMaptoJson(response, result);
+			return;
+		}
+	}
+//
+//	// 总店
+//	@RequestMapping("/headshop")
+//	public ModelAndView headShop(long adminId, String name, String password, int privilege) {
+//		ModelAndView mov = new ModelAndView();
+//		mov.setViewName("/manage/shopmanage");
+//		return mov;
+//	}
+//
+//	@RequestMapping("/editheadshop")
+//	public ModelAndView editHeadShop(long adminId, String name, String password, int privilege) {
+//		ModelAndView mov = new ModelAndView();
+//		mov.setViewName("/manage/shopmanage");
+//		return mov;
+//	}
+//
+//	@RequestMapping("/delheadshop")
+//	public ModelAndView delHeadShop(long adminId, String name, String password, int privilege) {
+//		ModelAndView mov = new ModelAndView();
+//		mov.setViewName("/manage/shopmanage");
+//		return mov;
+//	}
+//
+//	// 代理商
+//	@RequestMapping("/agent")
+//	public ModelAndView agentList(long adminId, String name, String password, int privilege) {
+//		ModelAndView mov = new ModelAndView();
+//		mov.setViewName("/manage/shopmanage");
+//		return mov;
+//	}
+//
+//	@RequestMapping("/addagent")
+//	public ModelAndView addAgent(long adminId, String name, String password, int privilege) {
+//		ModelAndView mov = new ModelAndView();
+//		mov.setViewName("/manage/shopmanage");
+//		return mov;
+//	}
+//
+//	@RequestMapping("/editagent")
+//	public ModelAndView editAgent(long adminId, String name, String password, int privilege) {
+//		ModelAndView mov = new ModelAndView();
+//		mov.setViewName("/manage/shopmanage");
+//		return mov;
+//	}
+
+	@RequestMapping("/category")
+	public ModelAndView category() {
+		ModelAndView mov = new ModelAndView();
+		mov.addObject("categorylist", maShopService.getCategory());
+		mov.setViewName("/manage/categorylist");
+		return mov;
+	}
+
+	@RequestMapping("/editcategory")
+	public ModelAndView editCategory(Long cid, String name) {
+		ModelAndView mov = new ModelAndView();
+		if (cid != null) {
+			maShopService.editCategory(cid, name);
+		} else {
+			maShopService.addCategory(name);
+		}
+		mov.addObject("categorylist", maShopService.getCategory());
+		mov.setViewName("redirect:/manage/category");
+		return mov;
+	}
+
+	@RequestMapping("/delcategory")
+	public ModelAndView delCategory(Long cid) {
+		ModelAndView mov = new ModelAndView();
+		if (cid != null) {
+			maShopService.delCategory(cid);
+		}
+		mov.addObject("categorylist", maShopService.getCategory());
+		mov.setViewName("redirect:/manage/category");
+		return mov;
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/getstoreuser", produces = "application/json; charset=UTF-8")
+	public String getStoreUser(Long sid) {
+		return new Gson().toJson(maShopService.getStoreUser(sid));
+	}
+	
+	@ResponseBody
+	@RequestMapping(value = "/editstoreuser", produces = "text/html; charset=UTF-8")
+	public String editStoreUser(Long sid, Long suserid, String phone, String password) {
+		if (suserid == null) {
+			return maShopService.addStoreUser(sid, phone, password);
+		} else {
+			return maShopService.editStoreUser(suserid, phone, password);
+		}
+	}
+	
+	/**
+	 * 获取总让列表
+	 * @param pageIndex
+	 * @param keywords
+	 * @return
+	 */
+	@RequestMapping("/headshoplist")
+	public ModelAndView headshoplist(Integer pageIndex, String keywords){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<HeadStore> result = maShopService.getHeadStorelistByPage(pageIndex, Constants.ADMINLISTNUM, keywords);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/manage/headshoplist?pageIndex="+pageIndex);
+			}
+		}
+		List<HeadStore> headlist = result.getDataList();
+		long pageCount = (result.getTotal()+Constants.ADMINLISTNUM-1)/Constants.ADMINLISTNUM;
+		mov.addObject("headlist", headlist);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("keywords", keywords);
+		mov.setViewName("manage/headshoplist");
+		return mov;
+	}
+	
+	/**
+	 * 添加门店用户
+	 * @param store
+	 * @return
+	 */
+	@RequestMapping("/addheadshop")
+	public ModelAndView addheadshop(HeadStore store){
+		ModelAndView mov = new ModelAndView();
+		if(store.getId() == 0){
+			HeadStore headstore = new HeadStore();
+			headstore.setName(store.getName());
+			headstore.setPassword(CommonUtils.MD5(store.getPassword()));
+			maShopService.addHeadStore(headstore);
+		}else{
+			HeadStore headstore = maShopService.getHeadStoreById(store.getId());
+			headstore.setName(store.getName());
+			if(!CommonUtils.isEmptyString(store.getPassword())){
+				headstore.setPassword(CommonUtils.MD5(store.getPassword()));
+			}
+			maShopService.updateHeadStore(headstore);
+		}
+		mov.setViewName("redirect:/manage/headshoplist");
+		return mov;
+	}
+	
+	/**
+	 * 删除总店
+	 * @param id
+	 * @param response
+	 */
+	@RequestMapping("/delheadstore")
+	public void delheadstore(Long id, HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		String message = "";
+		if(id == null){
+			result.put("code", 102);
+			message = "门店不存在";
+			result.put("message", message);
+			CommonUtils.setMaptoJson(response, result);
+			return;
+		}else{
+			HeadStore store = maShopService.getHeadStoreById(id);
+			if(store == null){
+				result.put("code", 102);
+				message = "门店不存在";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}else{
+				List<HeadShopRelate> list = maShopService.getHeadShopRelateListByhead(id);
+				if(list != null && list.size() > 0){
+					for (HeadShopRelate headShopRelate : list) {
+						maShopService.delHeadShopRelate(headShopRelate);
+					}
+				}
+				maShopService.delHeadStore(store);
+				result.put("code", 1);
+				message = "删除成功";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}
+		}
+		
+	}
+	
+	@RequestMapping("/relativeStore")
+	public ModelAndView relativeStore(Integer pageIndex, Long id){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Store> result = maShopService.getNotReStoreListByPapge(pageIndex, Constants.ADMINLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/manage/relativeStore?pageIndex="+pageIndex);
+			}
+		}
+		List<Store> storelist = result.getDataList();
+		long pageCount = (result.getTotal() + Constants.ADMINLISTNUM -1)/Constants.ADMINLISTNUM;
+		mov.addObject("storelist", storelist);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("headid", id);
+		mov.setViewName("manage/headrelative");
+		return mov;
+	}
+	
+	@RequestMapping("/relativeheadStore")
+	public void relativeheadStore(String[] store_id , Long headid, HttpServletResponse response){
+		if(store_id != null && store_id.length > 0){
+			for (String storeid : store_id) {
+				if(!CommonUtils.isEmptyString(storeid)){
+					HeadShopRelate relate = new HeadShopRelate();
+					relate.setHeadid(headid);
+					relate.setStoreid(CommonUtils.parseLong(storeid, 0));
+					maShopService.addHeadShopRelate(relate);
+				}
+			}
+		}
+		CommonUtils.setResponseStr("success", response);
+	}
+	
+	@RequestMapping("/myrelativeStore")
+	public ModelAndView myrelativeStore(Integer pageIndex, Long id){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Store> result = maShopService.getMyReStoreListByPapge(pageIndex, Constants.ADMINLISTNUM, id);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/manage/relativeStore?pageIndex="+pageIndex);
+			}
+		}
+		List<Store> storelist = result.getDataList();
+		long pageCount = (result.getTotal() + Constants.ADMINLISTNUM -1)/Constants.ADMINLISTNUM;
+		mov.addObject("storelist", storelist);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("headid", id);
+		mov.setViewName("manage/myheadrelative");
+		return mov;
+	}
+	
+	@RequestMapping("/cancelrelativeheadStore")
+	public void cancelrelativeheadStore(String[] store_id , Long headid, HttpServletResponse response){
+		if(store_id != null && store_id.length > 0){
+			for (String storeid : store_id) {
+				if(!CommonUtils.isEmptyString(storeid)){
+					HeadShopRelate relate = maShopService.getHeadStoreByHeadStore(CommonUtils.parseLong(storeid, 0), headid);
+					if(relate != null){
+						maShopService.delHeadShopRelate(relate);
+					}
+				}
+			}
+		}
+		CommonUtils.setResponseStr("success", response);
+	}
+	
+	@RequestMapping("/agentlist")
+	public ModelAndView agentlist(Integer pageIndex, String keywords){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<AgentInfo> result = maShopService.getAgentInfolistByPage(pageIndex, Constants.ADMINLISTNUM, keywords);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/manage/agentlist?pageIndex="+pageIndex);
+			}
+		}
+		List<AgentInfo> agentlist = result.getDataList();
+		long pageCount = (result.getTotal()+Constants.ADMINLISTNUM-1)/Constants.ADMINLISTNUM;
+		mov.addObject("agentlist", agentlist);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("keywords", keywords);
+		mov.setViewName("manage/agentlist");
+		return mov;
+	}
+	
+	@RequestMapping("/addagent")
+	public ModelAndView addagent(AgentInfo agentInfo){
+		ModelAndView mov = new ModelAndView();
+		if(agentInfo.getId() == 0){
+			AgentInfo agent = new AgentInfo();
+			agent.setName(agentInfo.getName());
+			agent.setPassword(CommonUtils.MD5(agentInfo.getPassword()));
+			maShopService.addAgentInfo(agent);
+		}else{
+			AgentInfo agent = maShopService.getAgentInfoById(agentInfo.getId());
+			agent.setName(agentInfo.getName());
+			if(!CommonUtils.isEmptyString(agentInfo.getPassword())){
+				agent.setPassword(CommonUtils.MD5(agentInfo.getPassword()));
+			}
+			maShopService.updateAgentInfo(agent);
+		}
+		mov.setViewName("redirect:/manage/agentlist");
+		return mov;
+	}
+	
+	@RequestMapping("/delagent")
+	public void delagent(Long id, HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		String message = "";
+		if(id == null){
+			result.put("code", 102);
+			message = "代理不存在";
+			result.put("message", message);
+			CommonUtils.setMaptoJson(response, result);
+			return;
+		}else{
+			AgentInfo agent = maShopService.getAgentInfoById(id);
+			if(agent == null){
+				result.put("code", 102);
+				message = "代理不存在";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}else{
+				List<AgentStoreRelate> list = maShopService.getAgentStoreRelateListByAgent(id);
+				if(list != null && list.size() > 0){
+					for (AgentStoreRelate agentStoreRelate : list) {
+						maShopService.delAgentStoreRelate(agentStoreRelate);
+					}
+				}
+				maShopService.delAgentInfo(agent);
+				result.put("code", 1);
+				message = "删除成功";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}
+		}
+		
+	}
+	
+	@RequestMapping("/relativeAgentStoreList")
+	public ModelAndView relativeAgentStoreList(Integer pageIndex, Long id){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Store> result = maShopService.getNotReAgentStoreListByPapge(pageIndex, Constants.ADMINLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/manage/relativeAgentStoreList?pageIndex="+pageIndex);
+			}
+		}
+		List<Store> storelist = result.getDataList();
+		long pageCount = (result.getTotal() + Constants.ADMINLISTNUM -1)/Constants.ADMINLISTNUM;
+		mov.addObject("storelist", storelist);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("agentid", id);
+		mov.setViewName("manage/agentrelative");
+		return mov;
+	}
+	
+	@RequestMapping("/relativeAgentStore")
+	public void relativeAgentStore(String[] store_id , Long agentid, HttpServletResponse response){
+		if(store_id != null && store_id.length > 0){
+			for (String storeid : store_id) {
+				if(!CommonUtils.isEmptyString(storeid)){
+					AgentStoreRelate relate = new AgentStoreRelate();
+					relate.setAgentid(agentid);
+					relate.setStoreid(CommonUtils.parseLong(storeid, 0));
+					maShopService.addAgentStoreRelate(relate);
+				}
+			}
+		}
+		CommonUtils.setResponseStr("success", response);
+	}
+	
+	@RequestMapping("/myrelativeAgentStore")
+	public ModelAndView myrelativeAgentStore(Integer pageIndex, Long id){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Store> result = maShopService.getMyReAgentStoreListByPapge(pageIndex, Constants.ADMINLISTNUM, id);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/manage/myrelativeAgentStore?pageIndex="+pageIndex);
+			}
+		}
+		List<Store> storelist = result.getDataList();
+		long pageCount = (result.getTotal() + Constants.ADMINLISTNUM -1)/Constants.ADMINLISTNUM;
+		mov.addObject("storelist", storelist);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("agentid", id);
+		mov.setViewName("manage/myagentrelative");
+		return mov;
+	}
+	
+	
+	@RequestMapping("/cancelrelativeagentStore")
+	public void cancelrelativeagentStore(String[] store_id , Long agentid, HttpServletResponse response){
+		if(store_id != null && store_id.length > 0){
+			for (String storeid : store_id) {
+				if(!CommonUtils.isEmptyString(storeid)){
+					AgentStoreRelate relate = maShopService.getAgentStoreRelateByAgentStore(CommonUtils.parseLong(storeid, 0), agentid);
+					if(relate != null){
+						maShopService.delAgentStoreRelate(relate);
+					}
+				}
+			}
+		}
+		CommonUtils.setResponseStr("success", response);
+	}
+	
+	@RequestMapping("/managelist")
+	public ModelAndView managelist(Integer pageIndex, String keywords){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<ManageUser> result = maShopService.getManageUserlistByPage(pageIndex, Constants.ADMINLISTNUM, keywords);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/manage/managelist?pageIndex="+pageIndex);
+			}
+		}
+		List<ManageUser> managelist = result.getDataList();
+		long pageCount = (result.getTotal()+Constants.ADMINLISTNUM-1)/Constants.ADMINLISTNUM;
+		mov.addObject("managelist", managelist);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("keywords", keywords);
+		mov.setViewName("manage/managelist");
+		return mov;
+	}
+	
+	
+	@RequestMapping("/addmanage")
+	public ModelAndView addmanage(ManageUser user){
+		ModelAndView mov = new ModelAndView();
+		if(user.getId() == 0){
+			ManageUser manageuser = new ManageUser();
+			manageuser.setName(user.getName());
+			manageuser.setPassword(CommonUtils.MD5(user.getPassword()));
+			manageuser.setPrivilege(user.getPrivilege());
+			maShopService.addManageUser(manageuser);
+		}else{
+			ManageUser manageuser  = maShopService.getManageUserById(user.getId());
+			manageuser.setName(user.getName());
+			if(!CommonUtils.isEmptyString(user.getPassword())){
+				manageuser.setPassword(CommonUtils.MD5(user.getPassword()));
+			}
+			manageuser.setPrivilege(user.getPrivilege());
+			maShopService.updateManageUser(manageuser);
+		}
+		mov.setViewName("redirect:/manage/managelist");
+		return mov;
+	}
+	
+	@RequestMapping("/checkmanagename")
+	public void checkmanagename(Long id, String name, HttpServletResponse response){
+		ManageUser manageuser = maShopService.getManageUserByName(name);
+		if(id == 0){
+			if(manageuser != null){
+				CommonUtils.setResponseStr("error", response);
+				return;
+			}
+		}else{
+			if(manageuser != null && manageuser.getId() != id){
+				CommonUtils.setResponseStr("error", response);
+				return;
+			}
+		}
+	}
+	
+	@RequestMapping("/delmanage")
+	public void delmanage(Long id, HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		String message = "";
+		if(id == null){
+			result.put("code", 102);
+			message = "管理员不存在";
+			result.put("message", message);
+			CommonUtils.setMaptoJson(response, result);
+			return;
+		}else{
+			ManageUser manageuser  = maShopService.getManageUserById(id);
+			if(manageuser == null){
+				result.put("code", 102);
+				message = "管理员不存在";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}else{
+				maShopService.delManageUser(manageuser);
+				result.put("code", 1);
+				message = "删除成功";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}
+		}
+		
+	}
+}

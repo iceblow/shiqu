@@ -1,0 +1,626 @@
+package com.daoshun.shiqu.controller;
+
+import java.util.HashMap;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.daoshun.exception.CustomException;
+import com.daoshun.exception.NullParameterException;
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.service.ShopService;
+
+@Controller
+@RequestMapping("/api/shop")
+public class ApiShopController extends ApiBaseController {
+
+	@Resource(name = "shopService")
+	private ShopService shopService;
+
+	/**
+	 * 商户登录
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/login", produces = "application/json; charset=UTF-8")
+	public String login(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String phone = request.getParameter("phone");
+			String password = request.getParameter("password");
+			String client_id = request.getParameter("client_id");
+			CommonUtils.validateEmpty(phone);
+			CommonUtils.validateEmpty(password);
+			map.put("user_list", shopService.login(phone, password, client_id));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 修改用户信息
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/editname", produces = "application/json; charset=UTF-8")
+	public String editname(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			String name = request.getParameter("name");
+			long uid = CommonUtils.parseLong(user_id, 0);
+			CommonUtils.validateEmpty(name);
+			if (uid <= 0) {
+				throw new NullParameterException();
+			}
+			map.put("user", shopService.editname(uid, name));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 修改用户密码
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/changepwd", produces = "application/json; charset=UTF-8")
+	public String changepwd(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			String old_pwd = request.getParameter("old_pwd");
+			String new_pwd = request.getParameter("new_pwd");
+			long uid = CommonUtils.parseLong(user_id, 0);
+			if (uid <= 0) {
+				throw new NullParameterException();
+			}
+			CommonUtils.validateEmpty(old_pwd);
+			CommonUtils.validateEmpty(new_pwd);
+			map.put("user", shopService.changePwd(uid, old_pwd, new_pwd));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取商家桌台
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/tables", produces = "application/json; charset=UTF-8")
+	public String getTables(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			String type = request.getParameter("type");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			if (sid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			map.put("area_list", shopService.getStoreArea(sid, CommonUtils.parseInt(type, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取商家菜单
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/menus", produces = "application/json; charset=UTF-8")
+	public String getMenus(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			if (sid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			map.put("category_list", shopService.getStoreMenu(sid));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 修改桌台状态
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/edittable", produces = "application/json; charset=UTF-8")
+	public String editTables(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String table_id = request.getParameter("table_id");
+			String state = request.getParameter("state");
+			CommonUtils.validateEmpty(table_id);
+			CommonUtils.validateEmpty(state);
+			shopService.editTable(CommonUtils.parseLong(table_id, 0), CommonUtils.parseInt(state, 0));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 换台
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/changetable", produces = "application/json; charset=UTF-8")
+	public String changeTable(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String from_id = request.getParameter("from_id");
+			String to_id = request.getParameter("to_id");
+			CommonUtils.validateEmpty(from_id);
+			CommonUtils.validateEmpty(to_id);
+			shopService.changeTable(CommonUtils.parseLong(from_id, 0), CommonUtils.parseLong(to_id, 0));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 店铺订单列表
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/tablenum", produces = "application/json; charset=UTF-8")
+	public String tableNum(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			if (sid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			map.putAll(shopService.getTableNum(sid));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 店铺订单列表
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/orders", produces = "application/json; charset=UTF-8")
+	public String orders(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			if (sid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			map.put("order_list", shopService.getOrderList(sid));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 下订单
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/addorder", produces = "application/json; charset=UTF-8")
+	public String addOrder(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			String store_id = request.getParameter("store_id");
+			String table_id = request.getParameter("table_id");
+			String comment = request.getParameter("comment");
+			String menu_info = request.getParameter("menu_info");
+			String total_price = request.getParameter("total_price");
+			String price = request.getParameter("price");
+			String people_num = request.getParameter("people_num");
+			CommonUtils.validateEmpty(user_id);
+			CommonUtils.validateEmpty(store_id);
+			CommonUtils.validateEmpty(menu_info);
+			CommonUtils.validateEmpty(total_price);
+			CommonUtils.validateEmpty(price);
+			shopService.addOrder(user_id, store_id, table_id, comment, menu_info, total_price, price, CommonUtils.parseInt(people_num, 1));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 菜单送厨
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/print", produces = "application/json; charset=UTF-8")
+	public String print(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String order_id = request.getParameter("order_id");
+			String type = request.getParameter("type");
+			CommonUtils.validateEmpty(order_id);
+			CommonUtils.validateEmpty(type);
+			shopService.print(CommonUtils.parseLong(order_id, 0), CommonUtils.parseInt(type, 1));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 加菜
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/addmenu", produces = "application/json; charset=UTF-8")
+	public String addmenu(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String order_id = request.getParameter("order_id");
+			String menu_json = request.getParameter("menu_json");
+			CommonUtils.validateEmpty(order_id);
+			CommonUtils.validateEmpty(menu_json);
+			shopService.addMenu(CommonUtils.parseLong(order_id, 0), menu_json);
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取签单人列表
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/sign", produces = "application/json; charset=UTF-8")
+	public String getSign(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			CommonUtils.validateEmpty(store_id);
+			map.put("list", shopService.getSignerList(CommonUtils.parseLong(store_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 收银
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/cashier", produces = "application/json; charset=UTF-8")
+	public String cashier(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String order_id = request.getParameter("order_id");
+			String coupon_no = request.getParameter("coupon_no");
+			String discount = request.getParameter("discount");
+			String moling = request.getParameter("moling");
+			int type = CommonUtils.parseInt(request.getParameter("type"), 0);
+			String card_id = request.getParameter("card_id");
+			String signer_id = request.getParameter("signer_id");
+			String comment = request.getParameter("comment");
+			String price = request.getParameter("price");
+			String actually_pay = request.getParameter("actually_pay");
+			CommonUtils.validateEmpty(order_id);
+			CommonUtils.validateEmpty(price);
+			// 1线下 2支付宝 3刷卡 4充值卡 5签单 6免单
+			switch (type) {
+			case 1:
+			case 2:
+			case 3:
+				break;
+			case 4:
+				CommonUtils.validateEmpty(card_id);
+				break;
+			case 5:
+			case 6:
+				CommonUtils.validateEmpty(signer_id);
+				break;
+			default:
+				throw new NullParameterException();
+				// break;
+			}
+			shopService.cashier(CommonUtils.parseLong(order_id, 0), coupon_no, CommonUtils.parseFloat(discount, 1.0f), CommonUtils.parseFloat(moling, 0.0f), type, CommonUtils.parseLong(card_id, 0),
+					CommonUtils.parseLong(signer_id, 0), comment, CommonUtils.parseFloat(price, 0.0f), CommonUtils.parseFloat(actually_pay, 0.0f));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 验证优惠券
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/checkcoupon", produces = "application/json; charset=UTF-8")
+	public String checkCoupon(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String coupon_no = request.getParameter("coupon_no");
+			String total_price = request.getParameter("total_price");
+			String store_id = request.getParameter("store_id");
+			CommonUtils.validateEmpty(coupon_no);
+			CommonUtils.validateEmpty(total_price);
+			CommonUtils.validateEmpty(store_id);
+			map.put("coupon", shopService.checkCoupon(coupon_no, total_price, CommonUtils.parseLong(store_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 验证储值卡
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/checkcard", produces = "application/json; charset=UTF-8")
+	public String checkCard(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String card_no = request.getParameter("card_no");
+			String price = request.getParameter("price");
+			CommonUtils.validateEmpty(card_no);
+			CommonUtils.validateEmpty(price);
+			map.put("card", shopService.checkCard(card_no, price));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 修改菜单（称重）
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/changemenu", produces = "application/json; charset=UTF-8")
+	public String changeMenu(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String order_id = request.getParameter("order_id");
+			String ordered_menu_id = request.getParameter("ordered_menu_id");
+			String weight = request.getParameter("weight");
+			String price = request.getParameter("price");
+			CommonUtils.validateEmpty(order_id);
+			CommonUtils.validateEmpty(ordered_menu_id);
+			shopService.changeMenuWeight(CommonUtils.parseLong(order_id, 0), CommonUtils.parseLong(ordered_menu_id, 0), CommonUtils.parseFloat(weight, 0.0f), CommonUtils.parseFloat(price, 0.0f));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 退菜
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/return", produces = "application/json; charset=UTF-8")
+	public String returnFood(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String order_id = request.getParameter("order_id");
+			String ordered_menu_id = request.getParameter("ordered_menu_id");
+			CommonUtils.validateEmpty(order_id);
+			CommonUtils.validateEmpty(ordered_menu_id);
+			shopService.returnFood(CommonUtils.parseLong(order_id, 0), CommonUtils.parseLong(ordered_menu_id, 0));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 转菜
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/switch", produces = "application/json; charset=UTF-8")
+	public String switchFood(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String order_id = request.getParameter("order_id");
+			String ordered_menu_id = request.getParameter("ordered_menu_id");
+			String table_id = request.getParameter("table_id");
+			CommonUtils.validateEmpty(order_id);
+			CommonUtils.validateEmpty(ordered_menu_id);
+			CommonUtils.validateEmpty(table_id);
+			shopService.switchFood(CommonUtils.parseLong(order_id, 0), CommonUtils.parseLong(ordered_menu_id, 0), CommonUtils.parseLong(table_id, 0));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取桌台订单
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/tableorder", produces = "application/json; charset=UTF-8")
+	public String tableOrder(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String table_id = request.getParameter("table_id");
+			CommonUtils.validateEmpty(table_id);
+			map.put("order", shopService.tableOrder(CommonUtils.parseLong(table_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 关联桌台和订单
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/orderaddtable", produces = "application/json; charset=UTF-8")
+	public String orderAddTable(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String table_id = request.getParameter("table_id");
+			String order_id = request.getParameter("order_id");
+			CommonUtils.validateEmpty(table_id);
+			CommonUtils.validateEmpty(order_id);
+			shopService.orderAddTable(CommonUtils.parseLong(table_id, 0), CommonUtils.parseLong(order_id, 0));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 商户登录
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/pushinfo", produces = "application/json; charset=UTF-8")
+	public String pushinfo(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			String client_id = request.getParameter("client_id");
+			CommonUtils.validateEmpty(user_id);
+			CommonUtils.validateEmpty(client_id);
+			shopService.updatePushInfo(CommonUtils.parseLong(user_id, 0), client_id);
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+}

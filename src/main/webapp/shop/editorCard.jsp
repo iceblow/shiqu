@@ -1,0 +1,178 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> 
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/dishes.css" rel="stylesheet">
+<link href="./css/common.css" rel="stylesheet">
+<link href="./css/page.css" rel="stylesheet">
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/page.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script src="./js/common.js"></script>
+<script type="text/javascript" src="./js/My97DatePicker/WdatePicker.js"></script>
+<script type="text/javascript">
+	$(function(){
+		if($("#id").val() == ""){
+			$("#id").val(0);
+		}
+		if($("#id").val() != 0){
+			$("#usernamediv").hide();
+			$("#cardspan").hide();
+		}else{
+			$("#usernamediv").show();
+			$("#cardspan").show();
+		}
+		
+	});
+	
+	function selectUserofStore(){
+		var id = $("#id").val();
+		var card_no = $("#card_no").val();
+		var money = $("#money").text();
+		var rechargemoney = $("#rechargemoney").val();
+		var actmoney = $("#actmoney").val();
+		window.location.href = "./selectStoreUser?id="+id+"&card_no="+card_no+"&money="+money+"&rechargemoney="+rechargemoney+"&actmoney="+actmoney;
+	}
+	
+	function checknum(){
+		var rechargemoney = $("#rechargemoney").val();
+		if(rechargemoney == ""){
+			$("#rechargemoney").val(0);
+		}
+		var sendmoney = $("#sendmoney").val();
+		if(sendmoney == ""){
+			$("#sendmoney").val(0);
+		}
+		var actmoney = $("#actmoney").val();
+		if(actmoney == ""){
+			$("#actmoney").val(0);
+		}
+		var rechargemoney = $("#rechargemoney").val();
+		var sendmoney = $("#sendmoney").val();
+		$("#actmoney").val(parseFloat(rechargemoney)+parseFloat(sendmoney))
+	}
+	
+	function checknum2(){
+		var rechargemoney = $("#rechargemoney").val();
+		if(rechargemoney == ""){
+			$("#rechargemoney").val(0);
+		}
+		var sendmoney = $("#sendmoney").val();
+		if(sendmoney == ""){
+			$("#sendmoney").val(0);
+		}
+		var actmoney = $("#actmoney").val();
+		if(actmoney == ""){
+			$("#actmoney").val(0);
+		}
+		var rechargemoney = $("#rechargemoney").val();
+		var sendmoney = $("#sendmoney").val();
+		$("#actmoney").val(parseFloat(sendmoney)+parseFloat(rechargemoney));
+	}
+	
+	function checknum3(){
+		var rechargemoney = $("#rechargemoney").val();
+		if(rechargemoney == ""){
+			$("#rechargemoney").val(0);
+		}
+		var sendmoney = $("#sendmoney").val();
+		if(sendmoney == ""){
+			$("#sendmoney").val(0);
+		}
+		var actmoney = $("#actmoney").val();
+		if(actmoney == ""){
+			$("#actmoney").val(0);
+		}
+		var rechargemoney = $("#rechargemoney").val();
+		var sendmoney = $("#sendmoney").val();
+		var actmoney = $("#actmoney").val();
+		$("#sendmoney").val(parseFloat(actmoney)-parseFloat(rechargemoney));
+		var sendmoney = $("#sendmoney").val();
+		if(sendmoney < 0){
+			$("#sendmoney").val(0);
+		}
+	}
+	
+	function checkForm(){
+		if($("#id").val() == 0){
+			var user_name = $("#user_name").val();
+			if(user_name == ""){
+				alert("用户不能为空");
+				return false;
+			}
+		}
+		var rechargemoney = $("#rechargemoney").val();
+		if(rechargemoney == ""){
+			alert("实收金额不能为空");
+			$("#rechargemoney").focus();
+			return false;
+		}
+		var actmoney = $("#actmoney").val();
+		if(actmoney == ""){
+			alert("充值不能为空");
+			$("#actmoney").focus();
+			return false;
+		}
+	}
+	
+	function clearinput(){
+		$("#rechargemoney").val("");
+		$("#actmoney").val("");
+		$("#sendmoney").val("");
+	}
+	
+</script>
+<title>食趣商家管理平台</title>
+</head>
+<body>
+<div id="content">
+	<div style="width: 100%; height: 83px; border-bottom: 1px solid #e5e6ea;">
+		<div style="width: 100%; height: 38px;"></div>
+		<div style="float: left; background-image: url(imgs/hicon.png); background-repeat: no-repeat;height: 17px; background-position-y: 5px;width: 11px;"></div>
+		<span style="float:left; font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;卡券管理&nbsp;&nbsp;&nbsp;&nbsp;&gt;&nbsp;&nbsp;&nbsp;&nbsp;优惠券&nbsp;&nbsp;&nbsp;&nbsp;&gt;&nbsp;&nbsp;&nbsp;&nbsp;<font style="color: #5f97fa;">添加优惠券</font></span>
+	</div>
+	<form action="./saveorupdateRecharge" id="couponForm" method="post" enctype="multipart/form-data">
+	<input type="hidden" value="${id }" id="id" name="id"/>
+	<div class="detailItem">
+		<div class="detailItemLeft"><span style="margin-right: 15%;">卡号</span></div>
+		<div class="detailItemRight"><input value="${cardno }" id="card_no" name="card_no" readonly="readonly"/>&nbsp;&nbsp;<span id="cardspan">添加储值卡时已自动生成卡号</span></div>
+	</div>
+	<div class="detailItem" id="usernamediv">
+		<div class="detailItemLeft"><span style="margin-right: 15%;">用户名</span></div>
+		<div class="detailItemRight">
+		<input value="${cardusername }" id="user_name" name="user_name" readonly="readonly"/>
+		<input type="hidden" value="${user_id }" id="user_id" name="user_id" readonly="readonly"/>
+		<button type="button" class="btn btn-primary " aria-haspopup="true" aria-expanded="false" style="border-radius: 0px; width: 135px; height: 35px;" onclick="selectUserofStore()"><img src="imgs/phoneicon.png" style="width: 9px; height: 11px; margin-top: -2px;"> 从收藏用户绑定</button>
+		</div>
+	</div>
+	<div class="detailItem">
+		<div class="detailItemLeft"><span style="margin-right: 15%;">卡余额</span></div>
+		<div class="detailItemRight"><span style="float:left;min-width: 20px; height: 74px; margin-left: 1%; line-height: 74px;" id="money">${money }</span></div>
+	</div>
+	<div class="detailItem">
+		<div class="detailItemLeft"><span style="margin-right: 15%;">实收金额</span></div>
+		<div class="detailItemRight"><input value="${rechargemoney }" id="rechargemoney" name="rechargemoney" onkeyup="checkKeyForFloat(event, 'rechargemoney')" onblur="checknum()"/></div>
+	</div>
+	<div class="detailItem">
+		<div class="detailItemLeft"><span style="margin-right: 15%;">赠送金额</span></div>
+		<div class="detailItemRight"><input value="" id="sendmoney" name="sendmoney" onkeyup="checkKeyForFloat(event, 'sendmoney')" onblur="checknum2()"/></div>
+	</div>
+	<div class="detailItem">
+		<div class="detailItemLeft"><span style="margin-right: 15%;">充值金额</span></div>
+		<div class="detailItemRight"><input value="${actmoney }" id="actmoney" name="actmoney" onkeyup="checkKeyForFloat(event, 'actmoney')" onblur="checknum3()"/></div>
+	</div>
+	<div style="width: 100%;height: 40px;"></div>
+	<input type="submit" class="saveorupdate" style="float:left;" value="确定并上传" onclick="return checkForm();"/>
+	<div class="clearinput" style="float:left;" onclick="clearinput()">清空填写内容</div>
+	<div style="width: 100%;height: 40px;"></div>
+	</form>
+</div>
+</body>
+</html>

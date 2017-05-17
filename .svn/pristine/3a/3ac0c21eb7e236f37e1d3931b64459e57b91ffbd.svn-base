@@ -1,0 +1,399 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> 
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/shop.css" rel="stylesheet">
+<link href="./css/common.css" rel="stylesheet">
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/ajaxfileupload.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=N0qQQgEE7fAe8boAQOdkxvBl"></script>
+<script src="./js/common.js"></script>
+<script src="./js/shop.js"></script>
+<script type="text/javascript" src="./js/My97DatePicker/WdatePicker.js"></script>
+<script>
+var mark = new Array();//用来统计信息窗口下标
+
+$(function(){
+	var height = document.documentElement.clientHeight-120;
+	$("#l-map").height(height);
+})
+
+
+
+$(document).keydown(
+		function(event) {
+			if (event.keyCode == 13) { 
+				$('form').each(function() { 
+					event.preventDefault();     }
+				);
+				var display = $("#box_detail").css("display");
+				if(display=='block'){
+					searchWord();
+				}
+				} 
+			});
+</script>
+<title>店铺编辑</title>
+</head>
+<body style=" font-family: '微软雅黑';">
+<form action="./savestore" method="post"  enctype="multipart/form-data">
+<div style="width:94%;margin-left:3%;margin-top:40px;margin-bottom:30px;border-top:solid 1px #e5e6ea;">
+<input type="hidden" name="store_id" value="${store.store_id }">
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">名字</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<input type="text" class="form-control" name="store_name" value="${store.store_name }" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+</div>
+</div>
+
+<div style="width: 100%; height: 180px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">LOGO</div>
+<div style="height: 100%;  float:left; margin-left: 20px;">
+	<img src="${store.pic_url }" id="logoimg" width=120px height=120px style="margin-top:30px;float:left;">
+	<div style="position:relative;margin-top:30px;height:120px;float:left;width:130px;">
+	<input type="hidden" name="pic" id="pic" value="${store.pic }">
+	<button type="button" class="btn btn-primary detail_upload" style="bottom:0;right: 0;" aria-haspopup="true" aria-expanded="false" >本地浏览...</button>
+	<input type="file" id="logo" name="imgfile" style="position: absolute;bottom:0;right: 0; width:100px; height: 40px; opacity:0; cursor: pointer;" onchange="change('logoimg','logo');logoupload();">
+	</div>
+	<div style="position:relative;margin-top:30px;height:120px;float:left;width:200px;">
+	<span style="bottom:10px;color:#bdc6d7;font-size:12px;position:absolute;left:15px;">(支持上传jpg,png的文件)</span>
+	</div>
+</div>
+</div>
+
+<div style="width: 100%; height: ${fn:length(store.storepic_list)*135+110}px; border-bottom: 1px solid #eaeff2;" id="storeimg">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">图片(可多张)</div>
+<div style="height: 100%;  float:left; margin-left: 20px;padding-top:20px;">
+<c:forEach items="${store.storepic_list}" var="p" varStatus="status">  
+<div style="clear:both;margin-top:10px;width:400px;height:125px;position:relative;background-color:#f4f8fa;" id="imgdiv_${status.index}">
+<img src="${p.img_url }" id="img_${status.index}" width=100px height=100px style="position:absolute;left:13px;bottom:12px;">
+<button type="button" class="btn btn-primary detail_upload" style="bottom:13px;left:140px;" aria-haspopup="true" aria-expanded="false" >本地浏览...</button>
+<input type="file" id="file_${status.index}" name="imgfile" style="position: absolute;bottom:13px ;left:140px;; width:100px; height: 40px; opacity:0; cursor: pointer;" onchange="change('img_${status.index}','file_${status.index}');imgupload('${status.index}');">
+<input type="hidden" name="picid" id="picid_${status.index}" value="${p.pic_id }">
+<img src="./imgs/img_delete.png" style="position:absolute;right:0px;bottom:0px;cursor:pointer" onclick="removeimgdiv(${status.index})">
+</div>
+</c:forEach>
+<input type="hidden" value="${fn:length(store.storepic_list) }" id="imgindex">
+<button type="button" class="btn btn-success img_addbtn"  aria-haspopup="true" aria-expanded="false"  onclick="addimg()">增加照片</button>
+</div>
+</div>
+
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">所属分类</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<select class="category" name="category_id">
+		<option value="0" ></option>
+		<c:forEach items="${categorylist}" var="p" varStatus="status">  
+		<c:if test="${store.category_id==p.id}">
+		<option value="${p.id }" selected="selected">${p.name }</option>
+		</c:if>
+		<c:if test="${store.category_id!=p.id}">
+		<option value="${p.id }" >${p.name }</option>
+		</c:if>
+		</c:forEach>
+		</select>
+</div>
+</div>
+
+
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">最低消费</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<input type="text" class="form-control" name="min_send" id="min_send" value="${store.min_send }" onkeyup="checkKeyForFloat(event, 'min_send')" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+</div>
+</div>
+
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">支持外卖</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<select class="category" name="is_out">
+		<c:if test="${store.is_out==0 }">
+		<option value="0" selected="selected">不支持</option>
+		<option value="1" >支持</option>
+		</c:if>
+		<c:if test="${store.is_out==1 }">
+		<option value="0" >不支持</option>
+		<option value="1" selected="selected">支持</option>
+		</c:if>
+		</select>
+</div>
+</div>
+
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">外送费</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<input type="text" class="form-control" onkeyup="checkKeyForFloat(event, 'send_money')" name="send_money" id="send_money" value="${store.send_money }" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+</div>
+</div>
+
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">送货时间</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<input type="text" class="form-control" name="send_time" id="send_time" onkeyup="return checkNum(event,'send_time')" onkeyup= "return checkNum(event,'send_time')" value="${store.send_time }" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+</div>
+</div>
+
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">开店时间</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+	<input class="time_select" style="width:80px;" value="${store.open_time }" name="open_time" onClick="WdatePicker({dateFmt:'HH:mm',qsEnabled:false})"/>
+	 点 -
+	<input class="time_select" style="width:80px;" value="${store.close_time }" name="close_time" onClick="WdatePicker({dateFmt:'HH:mm',qsEnabled:false})"/> 点
+</div>
+</div>
+
+<div style="width: 100%; height:140px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">说明</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+	<textarea class="form-control intro" name="intro" style="height:76px;resize: none;margin-top:20px;" maxlength="250" onpropertychange="onmyinput(this)" oninput="return onmyinput(this)" onPaste="return onmypaste(this);" onKeyPress="return onmykeypress(this);" >${store.intro }</textarea>
+</div>
+</div>
+
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">电话</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<input type="text" class="form-control" name="phone" value="${store.phone }" required="required" maxlength=20 style="width: 200px; height: 33px; padding-left:5px; margin-top: 20px;">
+</div>
+</div>
+
+<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">商家区域</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<select class="category" name="provienceid" id="provienceid" onchange="changeProvience()">
+		<option value="0">--</option>
+		<c:forEach items="${proviencelist}" var="p" varStatus="status">  
+		<c:if test="${store.provienceid==p.id}">
+		<option value="${p.id }" selected="selected">${p.name }</option>
+		</c:if>
+		<c:if test="${store.provienceid!=p.id}">
+		<option value="${p.id }" >${p.name }</option>
+		</c:if>
+		</c:forEach>
+		</select>
+		
+		<select class="category" name="cityid" id="cityid"  onchange="changeCity()">
+		<option value="0">--</option>
+		<c:forEach items="${citylist}" var="p" varStatus="status">  
+		<c:if test="${store.cityid==p.id}">
+		<option value="${p.id }" selected="selected">${p.name }</option>
+		</c:if>
+		<c:if test="${store.cityid!=p.id}">
+		<option value="${p.id }" >${p.name }</option>
+		</c:if>
+		</c:forEach>
+		</select>
+		
+		<select class="category" name="areaid" id="areaid">
+		<option value="0">--</option>
+		<c:forEach items="${arealist}" var="p" varStatus="status">  
+		<c:if test="${store.areaid==p.id}">
+		<option value="${p.id }" selected="selected">${p.name }</option>
+		</c:if>
+		<c:if test="${store.areaid!=p.id}">
+		<option value="${p.id }" >${p.name }</option>
+		</c:if>
+		</c:forEach>
+		</select>
+</div>
+</div>
+
+<div style="width: 100%; height: 120px; border-bottom: 1px solid #eaeff2;">
+<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">地址</div>
+<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+	<input type="hidden" value="${store.latitude }" id="latitude" name="latitude">
+	<input type="hidden" value="${store.longitude }" id="longitude" name="longitude">
+		<input type="text" class="form-control" name="address" id="address" value="${store.address }" required="required" maxlength=20 style="width: 800px; height: 33px; padding-left:5px; margin-top: 20px;">
+	<button type="button" class="btn btn-primary detail_location" style="margin-top:15px;" aria-haspopup="true" aria-expanded="false" onclick="showalert()">地图定位</button>
+</div>
+</div>
+<button type="submit" class="btn btn-primary detail_location" style="margin-right:130px;width:180px;margin-top:60px;background-image: none;" aria-haspopup="true" aria-expanded="false" >确定并上传</button>
+
+</div>
+</form>
+</body>
+<!-- 地图弹窗 -->
+<div id="box_detail" class="alert" style="display: none;">
+	<div style="height:40px;line-height:40px;padding-left:22px;background-color:#f5f6fa">
+	店铺地址定位
+	<img src="./imgs/delete.png"  style="float: right;margin-top: 6px;margin-right: 15px;cursor: pointer;" onclick="hiddenAlert()">
+	</div>
+	<div style="margin-top:15px;height:30px;">
+		<input type="text" class="form-control"  id="alertaddress" value="${store.address }" style="float:left;width: 700px; height: 30px;margin-left:10px; padding-left:5px; ">
+		<button type="button" class="btn btn-primary detail_location" style="float:right;height:30px;margin-right:10px;width:75px;background-image: none;" aria-haspopup="true" aria-expanded="false" onclick="sureAlert()">确定</button>
+		<button type="button" class="btn btn-primary detail_location" style="float:right;height:30px;margin-right:10px;width:75px;background-image: none;" aria-haspopup="true" aria-expanded="false" onclick="searchWord()">搜索</button>
+		<input type="hidden"  id="alertlongitude" value="">
+		<input type="hidden"  id="alertlatitude" value="">
+	</div>  
+	<div style="position: relative;margin-top:15px;">
+		<div id="l-map" class="l-map" style="width:900px;border: 1px solid #e8e8e8;margin: 10px;"></div>
+		<div id="r-result"></div>
+	</div>
+</div>
+
+<!-- 弹窗 结束  -->
+<script type="text/javascript">
+var longitude = $("#longitude").val();
+var latitude = $("#latitude").val();
+var address = $("#address").val();
+// 百度地图API功能
+var map = new BMap.Map("l-map",{enableMapClick:false});
+var point = new BMap.Point(120.161604,30.276251);
+if(longitude != "" && latitude != "" && longitude != 0.0 && latitude != 0.0){
+	map.centerAndZoom(new BMap.Point(longitude,latitude), 15);
+	
+	var point0 = new BMap.Point(longitude,latitude);
+	var station = '${station.station_name}';
+	map.panBy(305,165);
+	//窗口样式
+// 	 var sContent =
+// 	 	"<div class='map_title_div'>"+ address+"</div>" ;
+// 	var opts = {
+// 	  position : point0,    // 指定文本标注所在的地理位置
+// 	  offset   : new BMap.Size(30, -30)    //设置文本偏移量
+// 	}
+// 	var label = new BMap.Label(address, opts);  // 创建文本标注对象
+		
+	var label = new BMap.Label(address,{offset:new BMap.Size(20,-10)});
+	label.setStyle({
+		borderColor:"#000000",
+	 });
+
+	var marker0 = new BMap.Marker(point0);
+// 	 var infoWindow = new BMap.InfoWindow(sContent);  // 创建信息窗口对象
+	 
+	 map.addOverlay(marker0);
+	 marker0.setLabel(label);
+// 	 marker0.openInfoWindow(infoWindow);
+	
+	
+}else{
+	map.centerAndZoom(point,15);
+	map.panBy(305,165);
+	
+}
+
+map.enableScrollWheelZoom();    //启用滚轮放大缩小，默认禁用
+map.enableContinuousZoom();    //启用地图惯性拖拽，默认禁用
+
+
+
+
+var marker = '';
+
+	
+
+	
+	//点击获取经纬度,并且获取附近信息
+	function showInfo(e){
+	  var pt = e.point;
+	  lng = e.point.lng;
+	  lat = e.point.lat;
+		var gc = new BMap.Geocoder();
+	    gc.getLocation(pt,  function(rs){
+	        var addComp = rs.addressComponents;
+	        address = addComp.district+addComp.street+addComp.streetNumber;
+	      	map.clearOverlays(marker);
+	      	
+	      	var point0 = new BMap.Point(e.point.lng,e.point.lat);
+	    	var label = new BMap.Label(address,{offset:new BMap.Size(20,-10)});
+	    	label.setStyle({
+	    		borderColor:"#000000",
+	    	 });
+			 var marker = new BMap.Marker(point0);
+ 			 map.addOverlay(marker);
+	 		 marker.setLabel(label);
+	 		 map.panTo(point0);
+		   	 $("#alertaddress").val(address);
+		   	 $("#alertlongitude").val(e.point.lng);
+		   	 $("#alertlatitude").val(e.point.lat);
+	    });  
+		    
+		    
+	
+	}
+	map.addEventListener("click", showInfo);
+	map.addEventListener("dragend", showInfo);
+	function sureMap(lng, lat,title){
+		map.clearOverlays(marker);
+		$("input[name=longitude]").val(lng);
+		$("input[name=latitude]").val(lat);
+		
+		$("#alert_body").fadeOut();
+		$("#box_detail").fadeOut();
+		$("#box_backgrond").fadeOut();
+		
+	}
+	//关闭覆盖物
+	function cancelMap(){
+		marker.closeInfoWindow(marker.infoWindow);
+		map.clearOverlays(marker);
+	}
+	
+	//关闭覆盖物
+	function cancelMap2(){
+		marker0.closeInfoWindow(marker0.infoWindow);
+		map.clearOverlays(marker0);
+	}
+	
+	// 添加标注
+	function addMarker(point, index){
+	  var myIcon = new BMap.Icon("http://api.map.baidu.com/img/markers.png", new BMap.Size(23, 25), {
+	    offset: new BMap.Size(10, 25),
+	    imageOffset: new BMap.Size(0, 0 - index * 25)
+	  });
+	  var marker2 = new BMap.Marker(point, {icon: myIcon});
+	  marker2.disableMassClear(); 
+	  map.addOverlay(marker2);
+	 
+	  return marker2;
+	}
+	
+	//自定义复杂样式
+	window.openInfoWinFuns = null;
+	var options = {
+	  onSearchComplete: function(results){
+	    // 判断状态是否正确
+	    if (local.getStatus() == BMAP_STATUS_SUCCESS){
+	        if(results.getCurrentNumPois() == undefined){
+	        	return;
+	        }
+	    	   var lon2 = results.getPoi(0).point.lng;
+	    	   var lat2 = results.getPoi(0).point.lat;
+	    	   	map.clearOverlays(marker);
+		      	
+		      	var point0 = new BMap.Point(lon2,lat2);
+		    	var label = new BMap.Label($("#alertaddress").val(),{offset:new BMap.Size(20,-10)});
+		    	label.setStyle({
+		    		borderColor:"#000000",
+		    	 });
+				 var marker = new BMap.Marker(point0);
+	 			 map.addOverlay(marker);
+		 		 marker.setLabel(label);
+		 		 map.centerAndZoom(point0,15);
+		 		 $("#alertlongitude").val(lon2);
+			   	 $("#alertlatitude").val(lat2);
+	    }else{
+	    	
+	    }
+	  }
+	  
+	};
+	
+
+	//自定义复杂样式
+	//搜索	
+	function searchWord(){
+		local = new BMap.LocalSearch(map, options);
+	    local.search($("#alertaddress").val());
+	}
+	
+</script>
+
+<div class="mask" style="display:none;"></div>
+</html>

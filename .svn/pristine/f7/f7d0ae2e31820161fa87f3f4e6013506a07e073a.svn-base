@@ -1,0 +1,64 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.common;
+
+import java.util.HashMap;
+
+/**
+ * @author qiuch
+ *
+ */
+public class Constants {
+
+	public static final HashMap<String, Object> SUCCESS_RESULT_MAP = new HashMap<String, Object>() {
+
+		private static final long serialVersionUID = 1L;
+		{
+			put("code", 1);
+			put("message", "操作成功");
+		}
+	};
+	public static final String EXCEPTION = "{\"message\":\"网络状况不佳，请稍后再试\",\"code\":100}";
+	// 用户相关错误定义
+	public static final String USER_EXIST_EXCEPTION = "{\"message\":\"用户名或手机号已被使用\",\"code\":89}";
+	public static final String PHONE_EXIST_EXCEPTION = "{\"message\":\"手机号已被使用\",\"code\":88}";
+	public static final String VCODE_ERR_EXCEPTION = "{\"message\":\"验证码错误或已失效\",\"code\":87}";
+	public static final String VCODE_REQ_EXCEPTION = "{\"message\":\"验证码获取时间过短，请稍后再试\",\"code\":86}";
+	public static final String USER_ERR_EXCEPTION = "{\"message\":\"用户信息有误，请稍后再试\",\"code\":85}";
+	public static final String USER_PWD_EXCEPTION = "{\"message\":\"密码错误，请确认后重试\",\"code\":84}";
+	public static final String USER_NAME_EXCEPTION = "{\"message\":\"用户不存在，请确认用户名或者手机号\",\"code\":83}";
+	public static final String USER_OLD_PWD_EXCEPTION = "{\"message\":\"原密码错误，请确认后重试\",\"code\":82}";
+	// 店铺相关自定义错误
+	public static final String STORE_ERR_EXCEPTION = "{\"message\":\"商家信息有误，请稍后再试\",\"code\":79}";
+	// 商家端相关定义
+	public static final String SHOP_ERR_EXCEPTION = "{\"message\":\"商家信息有误，请稍后再试\",\"code\":69}";
+	public static final String SHOP_USER_EXCEPTION = "{\"message\":\"手机号或者密码有误，请确认后重试\",\"code\":68}";
+	public static final String SHOP_TABLE_EXCEPTION = "{\"message\":\"桌台信息有误，请确认后重试\",\"code\":67}";
+	public static final String TABLE_USED_EXCEPTION = "{\"message\":\"桌台已被使用\",\"code\":66}";
+	public static final String COUPON_TIME_EXCEPTION = "{\"message\":\"优惠券不在使用期\",\"code\":65}";
+	public static final String COUPON_TOTAL_EXCEPTION = "{\"message\":\"金额未到优惠券使用条件\",\"code\":64}";
+	public static final String COUPON_USED_EXCEPTION = "{\"message\":\"用过了就不要再来骗了...\",\"code\":63}";
+	public static final String CARD_LACK_EXCEPTION = "{\"message\":\"储值卡余额不足\",\"code\":62}";
+	public static final String WEIGHT_EXCEPTION = "{\"message\":\"菜品信息有误或不可称重\",\"code\":61}";
+	public static final String CARD_ERR_EXCEPTION = "{\"message\":\"储值卡信息有误\",\"code\":60}";
+	public static final String PRICE_ERR_EXCEPTION = "{\"message\":\"订单价格核实有误，请返回重新下单\",\"code\":59}";
+	public static final String TABLE_CLEAR_EXCEPTION = "{\"message\":\"该桌台不能清台\",\"code\":58}";
+	public static final String TABLE_ORDER_EXCEPTION = "{\"message\":\"该桌台不能预约\",\"code\":57}";
+	public static final String TABLE_DISABLE_EXCEPTION = "{\"message\":\"该桌台不能预约\",\"code\":56}";
+	public static final String COUPON_STORE_EXCEPTION = "{\"message\":\"非该店的优惠券\",\"code\":55}";
+	// 订单相关
+	public static final String ORDER_ERR_EXCEPTION = "{\"message\":\"订单信息有误\",\"code\":49}";
+	public static final String ORDER_CANCEL_EXCEPTION = "{\"message\":\"订单信息有误\",\"code\":48}";
+	public static final String CALL_SERVER_EXCEPTION = "{\"message\":\"当前呼叫服务不可用\",\"code\":47}";
+	// 商家管理列表数
+	public static final int SHOPLISTNUM = 10;
+	// 后台管理列表数
+	public static final int ADMINLISTNUM = 15;
+
+	public static final String PRINT_IP = "http://dzp.feieyun.com";
+	public static final String PRINT_HOSTNAME = "/FeieServer";
+	// session常量
+	public static final String SESSION_MANAGE_ID = "manage_id";
+	public static final String SESSION_MANAGE_PRIVILEGE = "manage_privilege";
+}

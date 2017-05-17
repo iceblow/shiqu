@@ -1,0 +1,253 @@
+package com.daoshun.shiqu.controller;
+
+import java.util.HashMap;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.daoshun.exception.CustomException;
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.service.StoreService;
+
+@Controller
+@RequestMapping("/api/store")
+public class ApiStoreController extends ApiBaseController {
+
+	@Resource(name = "storeService")
+	private StoreService storeService;
+
+	/**
+	 * 轮播列表
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/banner", produces = "application/json; charset=UTF-8")
+	public String banner(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			map.put("ad_list", storeService.getBanner());
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 分类
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/category", produces = "application/json; charset=UTF-8")
+	public String category(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			map.put("category_list", storeService.getCategory());
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 商家列表
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/list", produces = "application/json; charset=UTF-8")
+	public String list(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String location = request.getParameter("location");
+			String page_size = request.getParameter("page_size");
+			String page = request.getParameter("page");
+			String keywords = request.getParameter("keywords");
+			String category = request.getParameter("category");
+			String sort = request.getParameter("sort");
+			String area = request.getParameter("area");
+			CommonUtils.validateEmpty(location);
+			map.putAll(storeService.getStoreList(location, keywords, CommonUtils.parseLong(category, 0), CommonUtils.parseInt(sort, 0), CommonUtils.parseInt(page_size, 10),
+					CommonUtils.parseInt(page, 1), area));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取商家详细
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/detail", produces = "application/json; charset=UTF-8")
+	public String detail(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			String user_id = request.getParameter("user_id");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			if (sid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			map.put("store", storeService.getStoreDetail(sid, CommonUtils.parseLong(user_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取商家菜单
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/menu", produces = "application/json; charset=UTF-8")
+	public String menu(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			if (sid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			// map.put("menu_list", storeService.getStoreMenu(sid));
+			map.put("category_list", storeService.getStoreMenuCategory(sid));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取商家优惠券
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/coupon", produces = "application/json; charset=UTF-8")
+	public String coupon(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			String user_id = request.getParameter("user_id");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			if (sid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			map.put("coupon_list", storeService.getStoreCoupon(sid, CommonUtils.parseLong(user_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取商家可下单桌台
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/tables", produces = "application/json; charset=UTF-8")
+	public String getTables(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			if (sid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			map.put("area_list", storeService.getStoreArea(sid));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 收藏商家
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/collect", produces = "application/json; charset=UTF-8")
+	public String collect(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String store_id = request.getParameter("store_id");
+			String user_id = request.getParameter("user_id");
+			long sid = CommonUtils.parseLong(store_id, 0);
+			long uid = CommonUtils.parseLong(user_id, 0);
+			if (sid <= 0 || uid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			storeService.collectStore(sid, uid);
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 领取优惠券
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/getcoupon", produces = "application/json; charset=UTF-8")
+	public String getCoupon(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String coupon_id = request.getParameter("coupon_id");
+			String user_id = request.getParameter("user_id");
+			long cid = CommonUtils.parseLong(coupon_id, 0);
+			long uid = CommonUtils.parseLong(user_id, 0);
+			if (cid <= 0 || uid <= 0) {
+				throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+			}
+			storeService.getCoupon(cid, uid);
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+}

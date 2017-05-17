@@ -1,0 +1,11 @@
+.top-left{
+	float:left;
+	color:#ffffff;
+	width:220px;
+	text-align:left;
+	padding-top:30px;
+	margin-left:30px;
+	height:120px;
+	font-family:'微软雅黑';
+}
+

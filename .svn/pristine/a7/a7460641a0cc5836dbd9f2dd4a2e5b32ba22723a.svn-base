@@ -1,0 +1,284 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.service;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.exception.CustomException;
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.JpushShopUtil;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.MyCoupon;
+import com.daoshun.shiqu.pojo.Order;
+import com.daoshun.shiqu.pojo.OrderDetail;
+import com.daoshun.shiqu.pojo.RechargeCard;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreTable;
+import com.daoshun.shiqu.pojo.StoreUser;
+
+/**
+ * @author qiuch
+ * 
+ */
+@Service("orderService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class OrderService extends OrderDetailService {
+
+	/**
+	 * 我的订单列表
+	 */
+	public Map<String, Object> getMyOrder(long user_id, int type, int page_index, int page_size) {
+		Map<String, Object> result = new HashMap<String, Object>();
+		String hql = " from Order where user_id = " + user_id;
+		String countHql = "select count(order_id) from Order where user_id = " + user_id;
+		switch (type) {
+		// 堂食
+		case 1:
+			hql = hql + " and is_out = 0 and state < 3 ";
+			countHql = countHql + " and is_out = 0 and state < 3 ";
+			break;
+		// 等待
+		case 2:
+			hql = hql + " and is_out = 0 and table_id = 0 and state < 3 ";
+			countHql = countHql + " and is_out = 0  and table_id = 0 and state < 3 ";
+			break;
+		// 外卖
+		case 3:
+			hql = hql + " and is_out = 1 and state < 3";
+			countHql = countHql + " and is_out = 1 and state < 3";
+			break;
+		// 已完成
+		case 4:
+			hql = hql + " and state > 2 ";
+			countHql = countHql + " and state > 2 ";
+			break;
+		default:
+			break;
+		}
+		hql = hql + " order by order_time desc";
+		List<Order> orders = (List<Order>) dataDao.pageQueryViaParam(hql, page_size, page_index, null);
+		for (Order order : orders) {
+			order.setStore(dataDao.getObjectById(Store.class, order.getStore_id()));
+		}
+		result.put("order_list", orders);
+		result.put("total", dataDao.getCount(countHql));
+		return result;
+	}
+
+	public Order getOrderDetail(long order_id) {
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		if (order != null) {
+			order.setStore(dataDao.getObjectById(Store.class, order.getStore_id()));
+			if (order.getTable_id() != 0) {
+				order.setTable_no(String.valueOf(dataDao.getFirstObjectViaParam("select table_no from StoreTable where table_id = " + order.getTable_id(), null)));
+			}
+		}
+		return order;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addOrder(String user_id, String store_id, String order_name, String phone, String is_out, String send_money, String address, String send_time, String table_id, String pay_type,
+			String comment, String menu_info, String coupon_id, String total, String price, int people_num) throws CustomException {
+		long uid = CommonUtils.parseLong(user_id, 0);
+		if (uid <= 0) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		long sid = CommonUtils.parseLong(store_id, 0);
+		if (sid <= 0) {
+			throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+		}
+		Order order = new Order();
+		order.setUser_id(uid);
+		order.setStore_id(sid);
+		order.setOrder_name(order_name);
+		order.setOrder_time(new Date());
+		order.setPhone(phone);
+		order.setPeople_num(people_num);
+		int isOut = CommonUtils.parseInt(is_out, 0);
+		order.setIs_out(isOut);
+		long tid = CommonUtils.parseLong(table_id, 0);
+		StoreTable storeTable = null;
+		if (tid > 0) {
+			storeTable = dataDao.getObjectById(StoreTable.class, tid);
+			if (storeTable.getState() != 1) {
+				throw new CustomException(Constants.TABLE_USED_EXCEPTION);
+			}
+		}
+		if (isOut == 1) {
+			if (CommonUtils.isEmptyString(send_time)) {
+				int minute = (int) dataDao.getFirstObjectViaParam("select send_time from Store where store_id = " + store_id, null);
+				Calendar c = Calendar.getInstance();
+				c.add(Calendar.MINUTE, minute);
+				order.setSend_time(CommonUtils.getTimeFormat(c.getTime(), "yyyy-MM-dd HH:mm"));
+			} else {
+				order.setSend_time(CommonUtils.getTimeFormat(new Date(), "yyyy-MM-dd ") + send_time);
+			}
+			order.setSend_money(CommonUtils.parseFloat(send_money, 0.0f));
+			order.setAddress(address);
+		} else {
+			order.setTable_id(tid);
+		}
+		order.setPay_type(CommonUtils.parseInt(pay_type, 0));
+		order.setComment(comment);
+		order.setCoupon_id(CommonUtils.parseLong(coupon_id, 0));
+		float total_price = CommonUtils.parseFloat(total, 0.0f);
+		order.setTotal_price(total_price);
+		order.setPrice(CommonUtils.parseFloat(price, 0.0f));
+		order.setState(1);
+		order.setIs_shop_order(0);
+		dataDao.addObject(order);
+		addOrderDetail(order.getOrder_id(), menu_info, total_price);
+		if (storeTable != null) {
+			storeTable.setCorrent_order(order.getOrder_id());
+			storeTable.setState(2);
+			dataDao.updateObject(storeTable);
+		}
+	}
+
+	public Store getStore(long store_id) throws CustomException {
+		Store s = dataDao.getObjectById(Store.class, store_id);
+		if (s == null) {
+			throw new CustomException(Constants.SHOP_ERR_EXCEPTION);
+		}
+		return s;
+	}
+
+	public List<MyCoupon> getCanUsedCoupon(long user_id, String total_price, long store_id) {
+		String hql = "from MyCoupon where is_used = 0 and now() between coupon.from_time and coupon.end_time and coupon.is_valid = 1 and min_money < :total and user_id = :uid and coupon.store_id = :sid order by coupon.amount desc";
+		List<MyCoupon> coupons = (List<MyCoupon>) dataDao.getObjectsViaParam(hql, new String[] { "total", "uid", "sid" }, CommonUtils.parseFloat(total_price, 0.0f), user_id, store_id);
+		for (MyCoupon myCoupon : coupons) {
+			myCoupon.setStore_name(String.valueOf(dataDao.getFirstObjectViaParam("select store_name from Store where store_id = " + store_id, null)));
+		}
+		return coupons;
+	}
+
+	public void callServer(long order_id) throws CustomException {
+		StoreTable storeTable = (StoreTable) dataDao.getFirstObjectViaParam("from StoreTable where corrent_order = " + order_id, null);
+		if (storeTable == null) {
+			throw new CustomException(Constants.CALL_SERVER_EXCEPTION);
+		}
+		List<StoreUser> uList = (List<StoreUser>) dataDao.getObjectsViaParam("from StoreUser where delflag = 0 and store_id = " + storeTable.getStore_id(), null);
+		JpushShopUtil jUtil = new JpushShopUtil();
+		for (StoreUser storeUser : uList) {
+			if (!CommonUtils.isEmptyString(storeUser.getClient_id())) {
+				jUtil.sendPush(storeTable.getTable_no(), storeUser.getClient_id());
+			}
+		}
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void cancelOrder(long order_id) throws CustomException {
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		if (order == null) {
+			throw new CustomException(Constants.ORDER_ERR_EXCEPTION);
+		}
+		if (order.getState() != 1) {
+			throw new CustomException(Constants.ORDER_CANCEL_EXCEPTION);
+		}
+		if (order.getTable_id() != 0) {
+			// 看看要不要更新桌台信息
+		}
+		order.setState(5);
+		dataDao.updateObject(order);
+	}
+
+	public RechargeCard checkCard(long user_id, long store_id, float price) {
+		String hql = "from RechargeCard where user_id = " + user_id + " and store.store_id = " + store_id;
+		RechargeCard rechargeCard = (RechargeCard) dataDao.getFirstObjectViaParam(hql, null);
+		if (rechargeCard != null) {
+			if (rechargeCard.getMoney() < price) {
+				rechargeCard = null;
+			}
+		}
+		return rechargeCard;
+	}
+
+	public OrderDetail getDetail(long detail_id) {
+		return dataDao.getObjectById(OrderDetail.class, detail_id);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void payOrder(long user_id, long order_id, float price, int pay_type, long coupon_id, long card_id) throws CustomException {
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		if (order == null) {
+			throw new CustomException(Constants.ORDER_ERR_EXCEPTION);
+		}
+		order.setPay_type(pay_type);
+		// 付款方式 1线下(现金) 2支付宝 3刷卡 4充值卡 5签单 6免单
+		switch (pay_type) {
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		case 4:
+			RechargeCard card = dataDao.getObjectById(RechargeCard.class, card_id);
+			if (card == null) {
+				throw new CustomException(Constants.CARD_ERR_EXCEPTION);
+			}
+			if (card.getMoney() < price) {
+				throw new CustomException(Constants.CARD_LACK_EXCEPTION);
+			}
+			card.setMoney(card.getMoney() - price);
+			dataDao.updateObject(card);
+			order.setCard_no(card.getCard_no());
+			break;
+		case 5:
+			break;
+		case 6:
+			break;
+		default:
+			break;
+		}
+		order.setState(4);
+		if (coupon_id != 0) {
+			MyCoupon coupon = dataDao.getObjectById(MyCoupon.class, coupon_id);
+			if (coupon == null) {
+				throw new CustomException(Constants.COUPON_ERR_EXCEPTION);
+			}
+			coupon.setIs_used(1);
+			coupon.setUse_time(new Date());
+			dataDao.updateObject(coupon);
+		}
+		order.setPrice(price);
+		order.setCheck_time(new Date());
+		order.setSerial_num(CommonUtils.makeSerialNum());
+		dataDao.updateObject(order);
+	}
+
+	public float canDiscountOrderPrice(long order_id) {
+		Double weighprice = (Double) dataDao.getFirstObjectViaParam("select sum( quantity*price*weight ) from OrderDetail where order_id = :order_id and can_discount = 1 and is_weigh = :is_weigh ",
+				new String[] { "order_id", "is_weigh" }, order_id, 1);
+		if (weighprice == null) {
+			weighprice = 0d;
+		}
+		Double unweighprice = (Double) dataDao.getFirstObjectViaParam("select sum( quantity*price ) from OrderDetail where order_id = :order_id and can_discount = 1 and is_weigh = :is_weigh ",
+				new String[] { "order_id", "is_weigh" }, order_id, 0);
+		if (unweighprice == null) {
+			unweighprice = 0d;
+		}
+		return (float) (weighprice + unweighprice);
+	}
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<Order> getSignerOrderListByPage(Integer pageIndex, Long signer_id, long store_id, int pageSize) {
+		String hql = " from Order where store_id = :store_id and signer_id = :signer_id and (pay_type = 5 or pay_type = 6) order by check_time desc";
+		String[] params = new String[] { "store_id", "signer_id" };
+		List<Order> list = (List<Order>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, params, store_id, signer_id);
+		String counthql = "select count(*) " + hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, params, store_id, signer_id);
+		QueryResult<Order> result = new QueryResult<Order>(list, total);
+		return result;
+	}
+}

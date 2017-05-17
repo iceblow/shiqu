@@ -1,0 +1,129 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/print.css" rel="stylesheet">
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/common.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<title>打印机管理</title>
+</head>
+<body>
+	<div style="width: 94%;margin-left:3%; height: 83px; ">
+		<div style="width: 100%; height: 38px;"></div>
+		<div style="float: left; background-image: url(imgs/hicon.png); background-repeat: no-repeat;height: 17px;width: 11px;"></div>
+		<span style="float:left; font-size: 12px;">&nbsp;打印机管理&nbsp;&nbsp;&gt;&nbsp;&nbsp;<font style="color: #5f97fa;">打印机编辑</font></span>
+	</div>
+	<form action="./saveprint" method="post">
+	<div style="width:94%;margin-left:3%;margin-top:40px;margin-bottom:30px;border-top:solid 1px #e5e6ea;">
+	<c:if test="${not empty print }"><input type="hidden" name="id" value="${print.id }"></c:if> 
+	<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">名字</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+			<input type="text" class="form-control" name="print_name" value="${print.print_name }" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+	</div>
+	</div>
+	<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">编号</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+			<input type="text" class="form-control" name="print_sn" value="${print.print_sn }" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+	</div>
+	</div>
+	<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">秘钥</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+			<input type="text" class="form-control" name="print_key"  value="${print.print_key }" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+	</div>
+	</div>
+		<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">打印份数</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+			<input type="text" class="form-control" name="print_num" id="print_num"  onkeyup= "return checkNum(event,'print_num')" value="<c:if test="${empty  print}">1</c:if> <c:if test="${not empty print }">${print.print_num }</c:if>" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+	</div>
+	</div>
+	<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">类型</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+			<select class="category" name="type">
+			<c:if test="${print.type==2 }">
+			<option value="2" selected="selected">宽型</option>
+			<option value="1" >窄型</option>
+			</c:if>
+			<c:if test="${empty print||print.type==1 }">
+			<option value="1" selected="selected">窄型</option>
+			<option value="2" >宽型</option>
+			</c:if>
+			</select>
+	</div>
+	</div>
+	
+	<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">类型</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+			<select class="category" name="scope">
+			<c:if test="${empty print|| empty print.scope || print.scope==1 }">
+			<option value="1" selected="selected">通用</option>
+			<option value="2" >预结单</option>
+			<option value="3" >收银</option>
+			<option value="4" >送厨总单</option>
+			<option value="5" >送厨分单</option>
+			<option value="6" >退菜单</option>
+			</c:if>
+			<c:if test="${print.scope== 2  }">
+			<option value="1" >通用</option>
+			<option value="2" selected="selected">预结单</option>
+			<option value="3" >收银</option>
+			<option value="4" >送厨总单</option>
+			<option value="5" >送厨分单</option>
+			<option value="6" >退菜单</option>
+			</c:if>
+			<c:if test="${print.scope== 3  }">
+			<option value="1" >通用</option>
+			<option value="2" >预结单</option>
+			<option value="3" selected="selected">收银</option>
+			<option value="4" >送厨总单</option>
+			<option value="5" >送厨分单</option>
+			<option value="6" >退菜单</option>
+			</c:if>
+			<c:if test="${print.scope== 4  }">
+			<option value="1" >通用</option>
+			<option value="2" >预结单</option>
+			<option value="3" >收银</option>
+			<option value="4" selected="selected">送厨总单</option>
+			<option value="5" >送厨分单</option>
+			<option value="6" >退菜单</option>
+			</c:if>
+			
+			<c:if test="${print.scope== 5  }">
+			<option value="1" >通用</option>
+			<option value="2" >预结单</option>
+			<option value="3" >收银</option>
+			<option value="4" >送厨总单</option>
+			<option value="5" selected="selected">送厨分单</option>
+			<option value="6" >退菜单</option>
+			</c:if>
+			
+			<c:if test="${print.scope== 6  }">
+			<option value="1" >通用</option>
+			<option value="2" >预结单</option>
+			<option value="3" >收银</option>
+			<option value="4" >送厨总单</option>
+			<option value="5" >送厨分单</option>
+			<option value="6" selected="selected">退菜单</option>
+			</c:if>
+			
+			</select>
+	</div>
+	</div>
+	
+	<button type="submit" class="btn btn-primary detail_submit" style="margin-right:130px;width:180px;margin-top:60px;background-image: none;" aria-haspopup="true" aria-expanded="false" >确定并上传</button>
+	
+	
+	</div>
+	</form>
+</body>
+</html>

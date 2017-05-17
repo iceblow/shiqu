@@ -1,0 +1,44 @@
+<%@ page language="java" contentType="text/html; charset=utf-8"
+    pageEncoding="utf-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> 
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, width=device-width">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="format-detection" content="telephone=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<link rel="stylesheet" href="css/order.css" type="text/css" media="screen">
+<link rel="stylesheet" href="iscroll/iscroll2.css">
+<script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
+<script type="text/javascript">
+	function lookdetail(store_id){
+		window.location.href = "./storedetail?store_id="+store_id;
+	}
+</script>
+<title>我的收藏</title>
+</head>
+<body>
+<div style="padding-bottom: 60px;">
+<c:forEach items="${storelist }" var="p" varStatus="statue">
+	<div style="width: 92%; height: 82px;margin: 0 auto; border-bottom: 1px solid #e5e5e5;" onclick="lookdetail(${p.store_id})">
+		<div style="width: 100%; height: 41px; padding-top: 24px; line-height: 32px;">
+			<div style="width: 69%; height: 100%; line-height: 41px; float:left; font-size: 15px;">
+				<img src="${p.pic_url }" style="width: 41px; height: 41px; float:left; border-radius: 8px;">
+				<div style="padding-left: 15px; float:left;">
+					<div style="height: 20px; line-height: 23px;">${p.store_name }</div>
+					<div style="color: #857777; font-size: 12px; line-height: 20px;">${p.category_name }</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</c:forEach>
+</div>
+<input type="hidden" value="3" id="bottom_index" name="bottom_index"/>
+<jsp:include page="bottom.jsp"/>
+</body>
+</html>

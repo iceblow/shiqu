@@ -1,0 +1,429 @@
+package com.daoshun.shiqu.controller.shop;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.controller.ApiBaseController;
+import com.daoshun.shiqu.pojo.Menu;
+import com.daoshun.shiqu.pojo.MenuCategory;
+import com.daoshun.shiqu.pojo.MenuUnit;
+import com.daoshun.shiqu.pojo.PrintInfo;
+import com.daoshun.shiqu.service.DishesService;
+import com.daoshun.shiqu.service.PrintService;
+import com.daoshun.shiqu.service.manage.MaShopService;
+
+@Controller
+@RequestMapping("/shop")
+public class DishesManage extends ApiBaseController{
+	
+	@Resource(name="dishesService")
+	DishesService dishesService;
+	
+	@Resource(name = "printService")
+	PrintService printService;
+
+	@Resource(name = "maShopService")
+	MaShopService maShopService;
+
+	long pageCount;
+	
+	/**
+	 * 分类列表（分布）
+	 * @param pageIndex
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/dishesClass")
+	public ModelAndView dishesClass(Integer pageIndex, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ; 
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<MenuCategory> result =  dishesService.getCategoryListByPage(shopid, pageIndex, Constants.SHOPLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex>1){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/dishesClass?pageIndex="+pageIndex);
+				return mov;
+			}
+		}
+		List<MenuCategory> categorylist = result.getDataList();
+		pageCount = (result.getTotal() + (Constants.SHOPLISTNUM - 1)) / Constants.SHOPLISTNUM;
+		mov.addObject("categorylist", categorylist);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("pageIndex", pageIndex);
+		mov.setViewName("shop/categorylist");
+		return mov;
+	}
+	
+	/**
+	 * 删除分类
+	 * @param id
+	 * @param response
+	 */
+	@RequestMapping("/delcategory")
+	public void delcategory(Long id, HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		long categorycount = dishesService.MenuCategoryCount();
+		String message = "";
+		result.put("code", 1);
+		if(categorycount <= 1){
+			message = "至少留下一个分类";
+			result.put("code", 101);
+			result.put("message", message);
+			CommonUtils.setMaptoJson(response, result);
+			return;
+		}
+		MenuCategory category = dishesService.getMenuCategoryById(id);
+		if(category == null){
+			message = "分类不存在";
+			result.put("code", 102);
+			result.put("message", message);
+			CommonUtils.setMaptoJson(response, result);
+			return;
+		}else{
+			//根据分类找菜品
+			List<Menu> menulist = dishesService.getMenuListByCategory(category.getId());
+			if(menulist != null && menulist.size() > 0){
+				message = "请先删除"+category.getName()+"下的菜品";
+				result.put("code", 500);
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+			}else{
+				//删除分类
+				dishesService.delMenuCategory(category);
+				CommonUtils.setMaptoJson(response, result);
+			}
+		}
+	}
+	
+	/**
+	 * 删除多个分类
+	 * @param id
+	 * @param response
+	 */
+	@RequestMapping("/delCategoryList")
+	public void delCategoryList(String id, HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		long categorycount = dishesService.MenuCategoryCount();
+		String message = "";
+		result.put("code", 1);
+		String[] idlist = id.split(",");
+		if(categorycount <= idlist.length){
+			message = "至少留下一个分类";
+			result.put("code", 101);
+			result.put("message", message);
+			CommonUtils.setMaptoJson(response, result);
+			return;
+		}else{
+			
+			if(idlist != null && idlist.length > 0){
+				for (String idstr : idlist) {
+					MenuCategory category = dishesService.getMenuCategoryById(CommonUtils.parseLong(idstr, 0));
+					if(category != null){
+						//根据分类找菜品
+						List<Menu> menulist = dishesService.getMenuListByCategory(category.getId());
+						if(menulist != null && menulist.size() > 0){
+							if(CommonUtils.isEmptyString(message)){
+								message = "请先删除"+category.getName();
+							}else{
+								message = message+","+category.getName();
+							}
+							result.put("code", 500);
+							message = message+"下的菜品";
+							result.put("message", message);
+						}else{
+							//删除分类
+							dishesService.delMenuCategory(category);
+						}
+					}
+				}
+				CommonUtils.setMaptoJson(response, result);
+			}
+		}
+	}
+	
+	/**
+	 * 检验分类名是否存在
+	 * @param id
+	 * @param name
+	 * @param response
+	 */
+	@RequestMapping("/checkCategoryName")
+	public void checkCategoryName(Long id, String name,  HttpSession session, HttpServletResponse response){
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ;
+		MenuCategory category = dishesService.getMenuCategoryByName(name, shopid);
+		if(id == 0){
+			if(category == null){
+				CommonUtils.setResponseStr("success", response);
+				return;
+			}else{
+				CommonUtils.setResponseStr("error", response);
+				return;
+			}
+		}else{
+			if(category != null && category.getId() != id){
+				CommonUtils.setResponseStr("error", response);
+				return;
+			}else{
+				CommonUtils.setResponseStr("success", response);
+				return;
+			}
+		}
+	}
+	
+	/**
+	 * 保存或添加分类
+	 * @param category
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/saveupdateCategory")
+	public ModelAndView saveupdateCategory(MenuCategory category, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ; 
+		if(category.getId() == 0){
+			MenuCategory menuCategory = new MenuCategory();
+			menuCategory.setStore_id(shopid);
+			menuCategory.setName(category.getName());
+			menuCategory.setUpdate_time(new Date());
+			dishesService.addMenuCategory(menuCategory);
+		}else{
+			MenuCategory menuCategory = dishesService.getMenuCategoryById(category.getId());
+			menuCategory.setName(category.getName());
+			menuCategory.setUpdate_time(new Date());
+			dishesService.updateMenuCategory(menuCategory);
+		}
+		mov.setViewName("redirect:/shop/dishesClass");
+		return mov;
+	}
+	
+	/**
+	 * 菜品列表（分页）
+	 */
+	@RequestMapping("/dishesManage")
+	public ModelAndView dishesManage(Integer pageIndex, HttpSession session, String keyword){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ; 
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Menu> result =  dishesService.getMenuListByPage(shopid, keyword, pageIndex, Constants.SHOPLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex>1){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/dishesManage?pageIndex="+pageIndex);
+				return mov;
+			}
+		}
+		List<Menu> menulist = result.getDataList();
+		if(menulist != null && menulist.size() > 0){
+			for (Menu menu : menulist) {
+				if(!CommonUtils.isEmptyString(menu.getDescription())){
+					if(menu.getDescription().length() > 150){
+						menu.setDescription(menu.getDescription().substring(0, 149));
+					}
+				}
+			}
+		}
+		pageCount = (result.getTotal() + (Constants.SHOPLISTNUM - 1)) / Constants.SHOPLISTNUM;
+		mov.addObject("menulist", menulist);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("keyword", keyword);
+		mov.setViewName("shop/menulist");
+		return mov;
+	}
+	
+	/**
+	 * 删除菜品
+	 * @param menu_id
+	 * @param response
+	 */
+	@RequestMapping("/delMenu")
+	public void delMenu(Long menu_id, HttpServletResponse response){
+		Menu menu = dishesService.getMenuById(menu_id);
+		if(menu == null){
+			CommonUtils.setResponseStr("error", response);
+			return;
+		}else{
+			menu.setDelflag(1);
+			dishesService.updateMenu(menu);
+			CommonUtils.setResponseStr("success", response);
+			return;
+		}
+	}
+	
+	/**
+	 * 删除菜品列表
+	 * @param menu_id
+	 * @param response
+	 */
+	@RequestMapping("/delMenuList")
+	public void delMenuList(String menu_id, HttpServletResponse response){
+		String[] menuidlist = menu_id.split(",");
+		if(menuidlist != null && menuidlist.length > 0){
+			for (String menuid : menuidlist) {
+				Menu menu = dishesService.getMenuById(CommonUtils.parseLong(menuid, 0));
+				if(menu != null){
+					menu.setDelflag(1);
+					dishesService.updateMenu(menu);
+				}
+			}
+		}
+		CommonUtils.setResponseStr("success", response);
+		return;
+	}
+	
+	/**
+	 * 菜品详细
+	 * @param session
+	 * @param menu_id
+	 * @return
+	 */
+	@RequestMapping("/menuDetail")
+	public ModelAndView menuDetail(HttpSession session,Long menu_id){
+		ModelAndView mov = new ModelAndView();
+		if(menu_id != 0){
+			Menu menu = dishesService.getMenuById(menu_id);
+			mov.addObject("menu", menu);
+		}
+		long store_id = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ;
+		List<PrintInfo> printlist = printService.getPrintListByStoreId(store_id,3);
+		mov.addObject("shopid", store_id);
+		mov.addObject("printlist", printlist);
+		mov.setViewName("shop/menudetail");
+		return mov;
+	}
+	
+	/**
+	 * 跳转到编辑菜品
+	 * @param session
+	 * @param menu_id
+	 * @return
+	 */
+	@RequestMapping("/editorMenu")
+	public ModelAndView editorMenu(HttpSession session,Long menu_id){
+		ModelAndView mov = new ModelAndView();
+		if(menu_id != 0){
+			Menu menu = dishesService.getMenuById(menu_id);
+			mov.addObject("menu", menu);
+			if(!CommonUtils.isEmptyString(menu.getTaste())){
+				String[] tastelist = menu.getTaste().split(",");
+				mov.addObject("tastelist", tastelist);
+			}
+		}
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ; 
+		mov.addObject("shopid", shopid);
+		List<MenuCategory> categorylist = dishesService.getCategoryList(shopid);
+		List<PrintInfo> printlist = printService.getPrintListByStoreId(shopid,3);
+		List<MenuUnit> unitlist = maShopService.getMenuUnitList();
+		mov.addObject("categorylist", categorylist);
+		mov.addObject("printlist", printlist);
+		mov.addObject("unitlist", unitlist);
+		mov.setViewName("shop/editorMenu");
+		return mov;
+	}
+	
+	/**
+	 * 添加或保存菜品
+	 * @param menu
+	 * @param picFile
+	 * @return
+	 */
+	@RequestMapping("/saveorupdateMenu")
+	public ModelAndView saveorupdateMenu(Menu menu, @RequestParam(value = "picFile", required = false) MultipartFile picFile){
+		ModelAndView mov = new ModelAndView();
+		if(menu.getMenu_id() == 0){
+			Menu newmenu = new Menu();
+			newmenu.setStore_id(menu.getStore_id());
+			newmenu.setMenu_name(menu.getMenu_name());
+			newmenu.setSpell(CommonUtils.PingYin(menu.getMenu_name()));
+			newmenu.setCategory_id(menu.getCategory_id());
+			newmenu.setDelflag(0);
+			MenuCategory category = dishesService.getMenuCategoryById(menu.getCategory_id());
+			newmenu.setCategory(category.getName());
+			if(picFile != null && !picFile.isEmpty()){
+				long pic = getFileId(picFile, 1);
+				newmenu.setPic(pic);
+			}
+			newmenu.setPrice(menu.getPrice());
+			newmenu.setUnit(menu.getUnit());
+			newmenu.setKitunit(menu.getKitunit());
+			newmenu.setDescription(menu.getDescription());
+			newmenu.setIs_hot(menu.getIs_hot());
+			newmenu.setIs_weigh(menu.getIs_weigh());
+			newmenu.setCan_discount(menu.getCan_discount());
+			newmenu.setSell_out(menu.getSell_out());
+			newmenu.setPrint_id1(menu.getPrint_id1());
+			newmenu.setPrint_id2(menu.getPrint_id2());
+			newmenu.setPrint_id3(menu.getPrint_id3());
+			String[] tasklist = menu.getTaste().split(",");
+			if(tasklist != null && tasklist.length > 0){
+				for (String taste : tasklist) {
+					if(taste != null && taste.length() > 0){
+						if(CommonUtils.isEmptyString(newmenu.getTaste())){
+							newmenu.setTaste(taste);
+						}else{
+							newmenu.setTaste(newmenu.getTaste()+","+taste);
+						}
+					}
+				}
+			}
+			dishesService.addMenu(newmenu);
+		}else{
+			Menu hasmenu = dishesService.getMenuById(menu.getMenu_id());
+			hasmenu.setMenu_name(menu.getMenu_name());
+			hasmenu.setSpell(CommonUtils.PingYin(menu.getMenu_name()));
+			hasmenu.setCategory_id(menu.getCategory_id());
+			MenuCategory category = dishesService.getMenuCategoryById(menu.getCategory_id());
+			hasmenu.setCategory(category.getName());
+			if(picFile != null && !picFile.isEmpty()){
+				long pic = getFileId(picFile, 1);
+				hasmenu.setPic(pic);
+			}
+			hasmenu.setPrice(menu.getPrice());
+			hasmenu.setUnit(menu.getUnit());
+			hasmenu.setKitunit(menu.getKitunit());
+			hasmenu.setDescription(menu.getDescription());
+			hasmenu.setIs_hot(menu.getIs_hot());
+			hasmenu.setIs_weigh(menu.getIs_weigh());
+			hasmenu.setCan_discount(menu.getCan_discount());
+			hasmenu.setSell_out(menu.getSell_out());
+			hasmenu.setPrint_id1(menu.getPrint_id1());
+			hasmenu.setPrint_id2(menu.getPrint_id2());
+			hasmenu.setPrint_id3(menu.getPrint_id3());
+			hasmenu.setTaste("");
+			String[] tasklist = menu.getTaste().split(",");
+			if(tasklist != null && tasklist.length > 0){
+				for (String taste : tasklist) {
+					if(taste != null && taste.length() > 0){
+						if(CommonUtils.isEmptyString(hasmenu.getTaste())){
+							hasmenu.setTaste(taste);
+						}else{
+							hasmenu.setTaste(hasmenu.getTaste()+","+taste);
+						}
+					}
+				}
+			}
+			dishesService.updateMenu(hasmenu);
+		}
+		mov.setViewName("redirect:/shop/dishesManage");
+		return mov;
+	}
+}

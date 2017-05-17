@@ -1,0 +1,35 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/roboto.min.css" rel="stylesheet">
+<link href="./css/material-fullpalette.min.css" rel="stylesheet">
+<link href="./css/ripples.min.css" rel="stylesheet">
+<link href="./css/login.css" rel="stylesheet">
+<title>欢迎登陆食趣后台管理</title>
+</head>
+<body>
+ <div class="container">
+
+      <form class="form-signin" action="./login" method="post">
+       <h2 class="form-signin-heading">食趣后台管理</h2>
+       <input name="name"  type="text" style="margin-top:20px" class="form-control floating-label" placeholder="用户名">
+       <input name="password"  type="password" style="margin-top:20px" class="form-control floating-label" placeholder="密码">
+       <div style="color: #f00">${err}</div>
+       <button class="btn btn-large btn-primary" type="submit">登陆</button>
+      </form>
+
+    </div> 
+</body>
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script src="./js/material.js"></script>
+<script src="./js/ripples.js"></script>
+<script>
+      $.material.init();
+</script>
+</html>

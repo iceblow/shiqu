@@ -1,0 +1,50 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.service;
+
+import java.io.File;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.dao.DataDao;
+import com.daoshun.shiqu.pojo.FileInfo;
+
+/**
+ * @author qiuch
+ * 
+ */
+@Service("baseService")
+public class BaseService {
+
+	@Resource
+	public DataDao dataDao;
+
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public String getFilePathById(long i) {
+		if (i > 0) {
+			FileInfo file = (FileInfo) dataDao.getObjectById(FileInfo.class, i);
+			// 拼接文件访问路径
+			if (file != null) {
+				String path = CommonUtils.getFileRootUrl() + file.getFile_url() + file.getFile_name();
+				return path.replace(File.separator, "/");
+			}
+		}
+		return null;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public long uploadComplete(String fileurl, String filename, int file_type) {
+		FileInfo finfo = new FileInfo();
+		finfo.setFile_name(filename);
+		finfo.setFile_url(fileurl);
+		finfo.setFile_type(file_type);
+		dataDao.addObject(finfo);
+		return finfo.getId();
+	}
+}

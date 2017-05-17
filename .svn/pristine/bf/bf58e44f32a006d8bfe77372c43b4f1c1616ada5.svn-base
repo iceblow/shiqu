@@ -1,0 +1,38 @@
+.leftli{
+	width:100%;
+	color:#000000;
+}
+
+.nav>li>a:focus, .nav>li>a:hover {
+    text-decoration: none;
+    background-color: #eee;
+/*     background-image: url(../imgs/leftselect.png); */
+/*    	background-repeat: no-repeat; */
+}
+
+.nav-pills>li+li {
+    margin-left:0px;
+}
+
+.nav-pills>li>a {
+    border-radius: 0px;
+}
+.nav>li>a {
+    padding:15px 35px;
+}
+a:focus, a:hover {
+    color: #000000;
+    text-decoration: underline;
+}
+
+a {
+    color: #000000;
+    text-decoration: none;
+}
+
+.nav-pills>li.active>a, .nav-pills>li.active>a:focus, .nav-pills>li.active>a:hover {
+    color: #000000;
+    background-color: #ffffff;
+    background-image: url(../imgs/leftselect.png);
+   	background-repeat: no-repeat;
+}

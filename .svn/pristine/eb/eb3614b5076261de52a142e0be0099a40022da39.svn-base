@@ -1,0 +1,264 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.service;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.netdata.StoreInfo;
+import com.daoshun.shiqu.pojo.Advert;
+import com.daoshun.shiqu.pojo.Collection;
+import com.daoshun.shiqu.pojo.Coupon;
+import com.daoshun.shiqu.pojo.DailyStatistics;
+import com.daoshun.shiqu.pojo.Menu;
+import com.daoshun.shiqu.pojo.MenuCategory;
+import com.daoshun.shiqu.pojo.MyCoupon;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreArea;
+import com.daoshun.shiqu.pojo.StoreCategory;
+import com.daoshun.shiqu.pojo.StorePic;
+
+/**
+ * @author qiuch
+ * 
+ */
+@Service("storeService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class StoreService extends BaseService {
+
+	public List<Advert> getBanner() {
+		List<Advert> adList = dataDao.getAllObject(Advert.class);
+		for (Advert advert : adList) {
+			advert.setPic_url(getFilePathById(advert.getPic()));
+		}
+		return adList;
+	}
+
+	public List<StoreCategory> getCategory() {
+		return dataDao.getAllObject(StoreCategory.class);
+	}
+
+	public List<String> getStoreCategory(long sid) {
+		List<String> menuCategories = (List<String>) dataDao.getObjectsViaParam("from MenuCategory where store_id = " + sid, null);
+		return menuCategories;
+	}
+
+	public StoreCategory getStoreCategoryById(long id) {
+		return dataDao.getObjectById(StoreCategory.class, id);
+	}
+
+	public HashMap<String, Object> getStoreList(String location, String keywords, long category_id, int sort, int page_size, int page, String area) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		StringBuffer sql = new StringBuffer("select s.store_id, s.store_name, s.category_name, s.is_out, s.min_send, s.sales_num, s.pic, ");
+		sql.append(" getdistance( s.longitude, s.latitude, " + location + ") as distance, ");
+		sql.append(" convert(timestampdiff(day, s.create_time, now()) < 30, unsigned ) as is_new, ");
+		sql.append(" (select count(c.coupon_id) from t_coupon c where c.store_id =s.store_id) as has_coupon ");
+		sql.append(" from t_stroe s where del_flg = 0 ");
+		String countSql = "select  count(store_id) from Store where del_flg = 0  ";
+		if (!CommonUtils.isEmptyString(keywords)) {
+			sql.append(" and store_name like '%" + keywords + "%' ");
+			countSql = countSql + " and store_name like '%" + keywords + "%' ";
+		}
+		if (!CommonUtils.isEmptyString(area)) {
+			sql.append(" and area like '%" + area + "%' ");
+			countSql = countSql + " and area like '%" + area + "%' ";
+		}
+		if (category_id != 0) {
+			sql.append(" and category_id = " + category_id);
+			countSql = countSql + " and category_id = " + category_id;
+			// sql.append(" and store_id in (select distinct store_id from t_store_category_relation where category_id = " + category_id + ")");
+			// countSql = countSql + " and store_id in (select distinct store_id from t_store_category_relation where category_id = " + category_id + ")";
+		}
+		switch (sort) {
+		// 综合排序（距离）
+		case 1:
+			sql.append(" order by getdistance( longitude, latitude, " + location + ") asc ");
+			break;
+		// 热度排序（销量）
+		case 2:
+			sql.append(" order by sales_num desc");
+			break;
+		default:
+			break;
+		}
+		sql.append(" limit " + page_size + " offset " + (page - 1) * page_size);
+		List<Object[]> stores = dataDao.executeSql(sql.toString());
+		List<StoreInfo> storeInfos = new ArrayList<StoreInfo>();
+		for (Object[] objects : stores) {
+			String picurl = getFilePathById(((java.math.BigInteger) objects[6]).longValue());
+			// List<String> categoryList = (List<String>) dataDao.getObjectsViaParam("from StoreCategory where store_id = " + String.valueOf(objects[0]), null);
+			storeInfos.add(new StoreInfo(objects, picurl));
+		}
+		result.put("store_list", storeInfos);
+		if (storeInfos.size() < 10) {
+			result.put("total", storeInfos.size());
+		} else {
+			result.put("total", dataDao.getCount(countSql));
+		}
+		return result;
+	}
+
+	public Store getStoreDetail(long store_id, long user_id) {
+		Store store = dataDao.getObjectById(Store.class, store_id);
+		if (store != null) {
+			List<Long> pic_ids = (List<Long>) dataDao.getObjectsViaParam("select pic_id from StorePic where store_id  = " + store_id, null);
+			if (pic_ids != null && pic_ids.size() > 0) {
+				List<String> pic_urls = new ArrayList<String>();
+				for (Long pic_id : pic_ids) {
+					pic_urls.add(getFilePathById(pic_id));
+				}
+				store.setPic_list(pic_urls);
+			}
+			if (store.getPic() > 0) {
+				store.setPic_url(getFilePathById(store.getPic()));
+			}
+			if (user_id > 0 && dataDao.getCount("select count(id) from Collection where type =1 and user_id = " + user_id + " and collection_id = " + store_id) > 0) {
+				store.setIs_collect(1);
+			}
+		}
+		return store;
+	}
+
+	/**
+	 * 废弃了
+	 * 
+	 * @param sid
+	 * @return
+	 */
+	public List<Menu> getStoreMenu(long sid) {
+		List<Menu> menus = (List<Menu>) dataDao.getObjectsViaParam("from Menu where store_id = " + sid, null);
+		if (menus != null && menus.size() > 0) {
+			for (Menu menu : menus) {
+				if (menu.getPic() > 0) {
+					menu.setPic_url(getFilePathById(menu.getPic()));
+				}
+			}
+		}
+		return menus;
+	}
+
+	public List<MenuCategory> getStoreMenuCategory(long sid) {
+		// List<MenuCategory> menuCategories = (List<MenuCategory>) dataDao.getObjectsViaParam("from MenuCategory where store_id = " + sid, null);
+		// return menuCategories;
+		List<MenuCategory> menuCategories = (List<MenuCategory>) dataDao.getObjectsViaParam("from MenuCategory where delflg = 0 and  store_id = " + sid, null);
+		for (MenuCategory menuCategory : menuCategories) {
+			List<Menu> menus = (List<Menu>) dataDao.getObjectsViaParam("from Menu where delflag = 0 and sell_out = 0 and store_id = " + sid + " and category  = '" + menuCategory.getName()
+					+ "' and sell_out = 0", null);
+			for (Menu menu : menus) {
+				menu.setPic_url(getFilePathById(menu.getPic()));
+			}
+			menuCategory.setMenu_list(menus);
+		}
+		return menuCategories;
+	}
+
+	public List<Coupon> getStoreCoupon(long sid, long user_id) {
+		String hql = "from Coupon where is_valid = 1 and  store_id = " + sid + " and now() between from_time and end_time ";
+		List<Coupon> coupons = (List<Coupon>) dataDao.getObjectsViaParam(hql, null);
+		if (user_id > 0) {
+			for (Coupon coupon : coupons) {
+				if (dataDao.getCount("select count(id) from MyCoupon where is_used = 0 and user_id = " + user_id + " and coupon_id = " + coupon.getCoupon_id()) > 0) {
+					coupon.setIs_geted(1);
+				}
+			}
+		}
+		return coupons;
+	}
+
+	public List<StoreArea> getStoreArea(long sid) {
+		String hql = "select distinct sa from StoreArea sa inner join fetch sa.table_list st where sa.store_id = " + sid + " and st.state = 1  and st.del_flg = 0 ";
+		List<StoreArea> storeAreas = (List<StoreArea>) dataDao.getObjectsViaParam(hql, null);
+		return storeAreas;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void getCoupon(long coupon_id, long user_id) {
+		MyCoupon myCoupon = new MyCoupon();
+		myCoupon.setCoupon(dataDao.getObjectById(Coupon.class, coupon_id));
+		myCoupon.setUser_id(user_id);
+		myCoupon.setCoupon_no(CommonUtils.makeRandomNo());
+		dataDao.addObject(myCoupon);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void collectStore(long store_id, long user_id) {
+		Collection collection = (Collection) dataDao.getFirstObjectViaParam("from Collection where user_id = " + user_id + " and collection_id = " + store_id + " and type = 1", null);
+		if (collection == null) {
+			collection = new Collection();
+			collection.setCollect_time(new Date());
+			collection.setCollection_id(store_id);
+			collection.setType(1);
+			collection.setUser_id(user_id);
+			dataDao.addObject(collection);
+		} else {
+			dataDao.deleteObject(collection);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public Store getStoreById(long store_id) {
+		Store store = dataDao.getObjectById(Store.class, store_id);
+		if (store != null) {
+			List<StorePic> storepic_list = (List<StorePic>) dataDao.getObjectsViaParam("from StorePic where store_id  = " + store_id, null);
+			for (StorePic storepic : storepic_list) {
+				storepic.setImg_url(getFilePathById(storepic.getPic_id()));
+			}
+			store.setStorepic_list(storepic_list);
+			if (store.getPic() > 0) {
+				store.setPic_url(getFilePathById(store.getPic()));
+			}
+		}
+		return store;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void updateStorePic(List<Long> delpics, List<Long> addpics, long store_id) {
+		if (delpics != null && delpics.size() > 0) {
+			StringBuffer delhql = new StringBuffer();
+			delhql.append(" from StorePic where store_id  = " + store_id);
+			delhql.append(" and pic_id in ( ");
+			for (int i = 0; i < delpics.size(); i++) {
+				if (i == 0) {
+					delhql.append(delpics.get(i));
+				} else {
+					delhql.append("," + delpics.get(i));
+				}
+			}
+			delhql.append(" )");
+			List<StorePic> delpiclist = (List<StorePic>) dataDao.getObjectsViaParam(delhql.toString(), null);
+			for (StorePic delpic : delpiclist) {
+				dataDao.deleteObject(delpic);
+			}
+		}
+		if (addpics != null && addpics.size() > 0) {
+			for (Long addpic : addpics) {
+				if (addpic != null) {
+					StorePic storepic = new StorePic();
+					storepic.setPic_id(addpic);
+					storepic.setStore_id(store_id);
+					dataDao.addObject(storepic);
+				}
+			}
+		}
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void updateStore(Store store) {
+		dataDao.updateObject(store);
+	}
+
+	public DailyStatistics getDailyStatisticsByStoreId(long store_id) {
+		String hql = " from DailyStatistics where store_id = :store_id";
+		DailyStatistics daily = (DailyStatistics) dataDao.getFirstObjectViaParam(hql, new String[] { "store_id" }, store_id);
+		return daily;
+	}
+}

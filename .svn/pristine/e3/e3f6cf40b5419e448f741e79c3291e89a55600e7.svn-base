@@ -1,0 +1,38 @@
+package com.daoshun.shiqu.controller.shop;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Order;
+import com.daoshun.shiqu.service.StoreOrderService;
+
+@Controller
+@RequestMapping("/shop")
+public class OrderManage {
+
+	@Resource(name="storeOrderService")
+	StoreOrderService storeOrderService;
+	
+	@RequestMapping("/order")
+	public ModelAndView order(Integer is_out,Integer state,String order_time,String keyword,Integer pageIndex,HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0) ;
+		QueryResult<Order> result = storeOrderService.getOrderListByStoreId(shopid, is_out, state, order_time, keyword, pageIndex, Constants.SHOPLISTNUM);
+		List<Order> orderlist = result.getDataList();
+		long pageCount = (result.getTotal() + Constants.SHOPLISTNUM - 1)/Constants.SHOPLISTNUM;
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("orderlist", orderlist);
+		return mov;
+	}
+	
+}

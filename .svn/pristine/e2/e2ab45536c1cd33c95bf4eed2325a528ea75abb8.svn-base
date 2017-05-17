@@ -1,0 +1,161 @@
+package com.daoshun.shiqu.pojo;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * 订单菜品信息
+ * 
+ * @author qiuch
+ *
+ */
+@Entity
+@Table(name = "t_order_detail")
+public class OrderDetail {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", length = 20, nullable = false)
+	private long id;
+	@Column(name = "order_id", length = 20, nullable = false)
+	private long order_id;
+	@Column(name = "menu_id", length = 20, nullable = false)
+	private long menu_id;
+	// 菜品名称
+	@Column(name = "menu_name", length = 50)
+	private String menu_name;
+	// 下单数量
+	@Column(name = "quantity")
+	private int quantity;
+	// 称重重量
+	@Column(name = "weight")
+	private float weight;
+	// 单价
+	@Column(name = "price")
+	private float price;
+	// 口味
+	@Column(name = "taste")
+	private String taste;
+	// 单位
+	@Column(name = "unit")
+	private String unit;
+	//送厨单位
+	@Column(name = "kitunit", length = 255)
+	private String kitunit;
+	// 可否打折
+	@Column(name = "can_discount", length = 2)
+	private int can_discount;
+	// 是否需称重
+	@Column(name = "is_weigh", length = 2)
+	private int is_weigh;
+
+	public void getInfoFromMenu(Menu menu) {
+		menu_id = menu.getMenu_id();
+		menu_name = menu.getMenu_name();
+		price = menu.getPrice();
+		unit = menu.getUnit();
+		can_discount = menu.getCan_discount();
+		is_weigh = menu.getIs_weigh();
+	}
+
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
+	}
+
+	public long getMenu_id() {
+		return menu_id;
+	}
+
+	public void setMenu_id(long menu_id) {
+		this.menu_id = menu_id;
+	}
+
+	public String getMenu_name() {
+		return menu_name;
+	}
+
+	public void setMenu_name(String menu_name) {
+		this.menu_name = menu_name;
+	}
+
+	public int getQuantity() {
+		return quantity;
+	}
+
+	public void setQuantity(int quantity) {
+		this.quantity = quantity;
+	}
+
+	public float getPrice() {
+		return price;
+	}
+
+	public void setPrice(float price) {
+		this.price = price;
+	}
+
+	public long getOrder_id() {
+		return order_id;
+	}
+
+	public void setOrder_id(long order_id) {
+		this.order_id = order_id;
+	}
+
+	public String getTaste() {
+		return taste;
+	}
+
+	public void setTaste(String taste) {
+		this.taste = taste;
+	}
+
+	public float getWeight() {
+		return weight;
+	}
+
+	public void setWeight(float weight) {
+		this.weight = weight;
+	}
+
+	public int getCan_discount() {
+		return can_discount;
+	}
+
+	public void setCan_discount(int can_discount) {
+		this.can_discount = can_discount;
+	}
+
+	public int getIs_weigh() {
+		return is_weigh;
+	}
+
+	public void setIs_weigh(int is_weigh) {
+		this.is_weigh = is_weigh;
+	}
+
+	public String getUnit() {
+		return unit;
+	}
+
+	public void setUnit(String unit) {
+		this.unit = unit;
+	}
+
+	public String getKitunit() {
+		return kitunit;
+	}
+
+	public void setKitunit(String kitunit) {
+		this.kitunit = kitunit;
+	}
+	
+}

@@ -1,0 +1,131 @@
+package com.daoshun.shiqu.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Menu;
+import com.daoshun.shiqu.pojo.MenuCategory;
+
+@Service("dishesService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class DishesService extends BaseService{
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<MenuCategory> getCategoryListByPage(long store_id, Integer pageIndex, int pageSize) {
+		String hql = " from MenuCategory where store_id = :store_id";
+		String[] params = new String[]{"store_id"};
+		List<MenuCategory> list = (List<MenuCategory>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, params, store_id);
+//		if(list != null && list.size() > 0){
+//			for (MenuCategory menuCategory : list) {
+//				String menuhql = " from Menu where store_id = :store_id and category_id = :category_id";
+//				String[] menuparams = new String[]{"store_id","category_id"};
+//				List<Menu> menu_list = (List<Menu>) dataDao.getObjectsViaParam(menuhql, menuparams, store_id, menuCategory.getId());
+//				if(menu_list != null && menu_list.size() > 0){
+//					menuCategory.setMenu_list(menu_list);
+//				}
+//			}
+//		}
+		String counthql = " select count(*) "+hql;
+		long count = (long) dataDao.getFirstObjectViaParam(counthql, params, store_id);
+		QueryResult<MenuCategory> result = new QueryResult<MenuCategory>(list, (int) count);
+		return result;
+	}
+
+	public MenuCategory getMenuCategoryById(Long id) {
+		MenuCategory info = dataDao.getObjectById(MenuCategory.class, id);
+		return info;
+	}
+
+	public MenuCategory getMenuCategoryByName(String name, long store_id) {
+		String hql = " from MenuCategory where name = :name and store_id = :store_id";
+		String[] param = new String[]{"name","store_id"};
+		MenuCategory info = (MenuCategory) dataDao.getFirstObjectViaParam(hql, param, name, store_id);
+		return info;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addMenuCategory(MenuCategory menuCategory) {
+		dataDao.addObject(menuCategory);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void updateMenuCategory(MenuCategory menuCategory) {
+		dataDao.updateObject(menuCategory);
+	}
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<Menu> getMenuListByPage(long store_id, String keyword, Integer pageIndex, int pageSize) {
+		String hql = " from Menu where store_id = :store_id and delflag = 0 and category_id in(select id from MenuCategory where delflg = 0)";
+		if(!CommonUtils.isEmptyString(keyword)){
+			hql += " and (menu_name like '%"+keyword+"%' or category like '%"+keyword+"%' or spell like '%"+keyword+"%')";
+		}
+		String[] param = new String[]{"store_id"};
+		List<Menu> list = (List<Menu>) dataDao.pageQueryViaParam(hql+" order by category_id", pageSize, pageIndex, param, store_id);
+		if(list != null && list.size() > 0){
+			for (Menu menu : list) {
+				if(menu.getPic() != 0){
+					menu.setPic_url(getFilePathById(menu.getPic()));
+				}
+			}
+		}
+		String counthql = "select count(*) "+hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, param, store_id);
+		QueryResult<Menu> result = new QueryResult<Menu>(list, (int) total);
+		return result;
+	}
+
+	public Menu getMenuById(Long menu_id) {
+		Menu menu = dataDao.getObjectById(Menu.class, menu_id);
+		if(menu != null && menu.getPic() != 0){
+			menu.setPic_url(getFilePathById(menu.getPic()));
+		}
+		return menu;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void delMenu(Menu menu) {
+		dataDao.deleteObject(menu);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<MenuCategory> getCategoryList(Long store_id) {
+		String hql = "from MenuCategory where store_id = :store_id and delflg = 0";
+		String[] params = new String[]{"store_id"};
+		List<MenuCategory> list = (List<MenuCategory>) dataDao.getObjectsViaParam(hql, params, store_id);
+		return list;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addMenu(Menu menu) {
+		dataDao.addObject(menu);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void updateMenu(Menu menu) {
+		dataDao.updateObject(menu);
+	}
+
+	public long MenuCategoryCount(long store_id) {
+		long count = (long) dataDao.getFirstObjectViaParam("select count(*) from MenuCategory where delflg = 0 and store_id = :store_id", new String[]{"store_id"}, store_id);
+		return count;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Menu> getMenuListByCategory(Long category_id) {
+		String hql = " from Menu where category_id = :category_id";
+		String[] params = new String[]{"category_id"};
+		List<Menu> list = (List<Menu>) dataDao.getObjectsViaParam(hql, params, category_id);
+		return list;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void delMenuCategory(MenuCategory category) {
+		dataDao.deleteObject(category);
+	}
+
+}

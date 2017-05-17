@@ -1,0 +1,361 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.service;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.exception.CustomException;
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.pojo.Coupon;
+import com.daoshun.shiqu.pojo.Menu;
+import com.daoshun.shiqu.pojo.MenuCategory;
+import com.daoshun.shiqu.pojo.MyCoupon;
+import com.daoshun.shiqu.pojo.Order;
+import com.daoshun.shiqu.pojo.OrderDetail;
+import com.daoshun.shiqu.pojo.RechargeCard;
+import com.daoshun.shiqu.pojo.StoreArea;
+import com.daoshun.shiqu.pojo.StoreSigner;
+import com.daoshun.shiqu.pojo.StoreTable;
+import com.daoshun.shiqu.pojo.StoreUser;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+/**
+ * @author qiuch
+ *
+ */
+@Service("shopService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class ShopService extends BaseService {
+
+	// ----------------------------------------------商户端专用
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public StoreUser login(String phone, String password, String client_id) throws CustomException {
+		StoreUser storeUser = (StoreUser) dataDao.getFirstObjectViaParam("from StoreUser where phone = :phone and password = :pwd ", new String[] { "phone", "pwd" }, phone, password);
+		if (storeUser == null) {
+			throw new CustomException(Constants.SHOP_USER_EXCEPTION);
+		}
+		if (!CommonUtils.isEmptyString(client_id)) {
+			storeUser.setClient_id(client_id);
+			dataDao.updateObject(storeUser);
+		}
+		return storeUser;
+	}
+
+	/**
+	 * 修改用户姓名
+	 * 
+	 * @param user_id
+	 * @param name
+	 * @return
+	 * @throws CustomException
+	 */
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public StoreUser editname(long user_id, String name) throws CustomException {
+		StoreUser storeUser = (StoreUser) dataDao.getObjectById(StoreUser.class, user_id);
+		if (storeUser == null) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		storeUser.setName(name);
+		dataDao.updateObject(storeUser);
+		return storeUser;
+	}
+
+	/**
+	 * 修改用户密码
+	 *
+	 */
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public StoreUser changePwd(long user_id, String old_pwd, String new_pwd) throws CustomException {
+		StoreUser storeUser = (StoreUser) dataDao.getObjectById(StoreUser.class, user_id);
+		if (storeUser == null) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		if (!storeUser.getPassword().equals(old_pwd)) {
+			throw new CustomException(Constants.USER_OLD_PWD_EXCEPTION);
+		}
+		storeUser.setPassword(new_pwd);
+		dataDao.updateObject(storeUser);
+		return storeUser;
+	}
+
+	/**
+	 * 获取区域桌台信息
+	 * 
+	 * @param sid
+	 * @return
+	 */
+	public List<StoreArea> getStoreArea(long sid, int type) {
+		String hql;
+		if (type != 0) {
+			hql = "select distinct sa from StoreArea sa right join fetch sa.table_list st where sa.store_id = " + sid + " and st.state = " + type;
+		} else {
+			hql = "from StoreArea  where store_id = " + sid;
+		}
+		List<StoreArea> storeAreas = (List<StoreArea>) dataDao.getObjectsViaParam(hql, null);
+		for (StoreArea storeArea : storeAreas) {
+			List<StoreTable> table_list = storeArea.getTable_list();
+			for (StoreTable storeTable : table_list) {
+				if (storeTable.getCorrent_order() != 0) {
+					storeTable.setOrder(dataDao.getObjectById(Order.class, storeTable.getCorrent_order()));
+				}
+			}
+		}
+		return storeAreas;
+	}
+
+	/**
+	 * 获取菜单信息
+	 */
+	public List<MenuCategory> getStoreMenu(long sid) {
+		List<MenuCategory> menuCategories = (List<MenuCategory>) dataDao.getObjectsViaParam("from MenuCategory where store_id = " + sid, null);
+		for (MenuCategory menuCategory : menuCategories) {
+			menuCategory.setMenu_list((List<Menu>) dataDao.getObjectsViaParam("from Menu where store_id = " + sid + " and category  = '" + menuCategory.getName() + "'", null));
+		}
+		return menuCategories;
+	}
+
+	/**
+	 * 修改桌台信息状态
+	 * 
+	 * @throws CustomException
+	 */
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void editTable(long tid, int state) throws CustomException {
+		StoreTable storeTable = dataDao.getObjectById(StoreTable.class, tid);
+		if (storeTable != null) {
+			storeTable.setState(state);
+			dataDao.addObject(storeTable);
+		} else {
+			throw new CustomException(Constants.SHOP_TABLE_EXCEPTION);
+		}
+	}
+
+	/**
+	 * 换台
+	 * 
+	 * @throws CustomException
+	 */
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void changeTable(long from_id, long to_id) throws CustomException {
+		StoreTable sTable1 = dataDao.getObjectById(StoreTable.class, from_id);
+		StoreTable sTable2 = dataDao.getObjectById(StoreTable.class, to_id);
+		if (sTable1 == null || sTable2 == null) {
+			throw new CustomException(Constants.SHOP_TABLE_EXCEPTION);
+		}
+		if (sTable2.getState() != 1) {
+			throw new CustomException(Constants.TABLE_USED_EXCEPTION);
+		}
+		sTable2.setCorrent_order(sTable1.getCorrent_order());
+		sTable2.setState(2);
+		sTable1.setCorrent_order(0);
+		dataDao.updateObject(sTable1);
+		dataDao.updateObject(sTable2);
+	}
+
+	public List<Order> getOrderList(long store_id) {
+		String hql = "from Order where store_id = " + store_id + " and state = 2 and is_out = 0 and table_id = 0 order by order_time desc";
+		List<Order> orders = (List<Order>) dataDao.getObjectsViaParam(hql, null);
+		return orders;
+	}
+
+	public HashMap<String, Object> getTableNum(long sid) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		String hql = "select count(table_id) from StoreTable where store_id = ? ";// "and state = ?";
+		String stateCondition = "and state = ?";
+		result.put("all_num", dataDao.getCount(hql, sid));
+		result.put("free_num", dataDao.getCount(hql + stateCondition, sid, 1));
+		result.put("use_num", dataDao.getCount(hql + stateCondition, sid, 2));
+		result.put("order_num", dataDao.getCount(hql + stateCondition, sid, 3));
+		result.put("disable_num", dataDao.getCount(hql + stateCondition, sid, 4));
+		return result;
+	}
+
+	public void print(long order_id, int type) {
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		List<OrderDetail> details = (List<OrderDetail>) dataDao.getObjectsViaParam("from OrderDetail where order_id = " + order_id, null);
+		// 预结算（打印账单）
+		if (type == 1) {
+		}
+		// 预结算（打印账单）
+		if (type == 2) {
+		}
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addMenu(long order_id, String menu_json) {
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		// List<OrderDetail> details = new ObjectMapper().readValue(menu_json, new TypeReference<List<OrderDetail>>() {
+		// });
+		List<OrderDetail> details = new Gson().fromJson(menu_json, new TypeToken<List<OrderDetail>>() {
+		}.getType());
+		if (details != null) {
+			float price = 0.0f;
+			for (OrderDetail orderDetail : details) {
+				orderDetail.setOrder_id(order_id);
+				dataDao.addObject(orderDetail);
+				if (orderDetail.getIs_weigh() == 1) {
+					price = price + orderDetail.getPrice() * orderDetail.getQuantity() * orderDetail.getWeight();
+				} else {
+					price = price + orderDetail.getPrice() * orderDetail.getQuantity();
+				}
+			}
+			order.setTotal_price(order.getTotal_price() + price);
+			order.setPrice(order.getPrice() + price);
+			dataDao.updateObject(order);
+		}
+	}
+
+	public List<StoreSigner> getSignerList(long store_id) {
+		List<StoreSigner> signers = (List<StoreSigner>) dataDao.getObjectsViaParam("from StoreSigner where store_id = " + store_id, null);
+		return signers;
+	}
+
+	public Coupon checkCoupon(String coupon_no, String total_price) throws CustomException {
+		MyCoupon myCoupon = (MyCoupon) dataDao.getFirstObjectViaParam("from MyCoupon where coupon_no = :cno", new String[] { "cno" }, coupon_no);
+		if (myCoupon.getIs_used() == 1) {
+			throw new CustomException(Constants.COUPON_USED_EXCEPTION);
+		}
+		Coupon c = myCoupon.getCoupon();
+		if (System.currentTimeMillis() < c.getFrom_time().getTime() || System.currentTimeMillis() > c.getEnd_time().getTime()) {
+			throw new CustomException(Constants.COUPON_TIME_EXCEPTION);
+		}
+		if (CommonUtils.parseFloat(total_price, 0.0f) < c.getMin_money()) {
+			throw new CustomException(Constants.COUPON_TOTAL_EXCEPTION);
+		}
+		return myCoupon.getCoupon();
+	}
+
+	public RechargeCard checkCard(String card_no, String price) throws CustomException {
+		RechargeCard card = (RechargeCard) dataDao.getFirstObjectViaParam("from RechargeCard where card_no = :cno", new String[] { "cno" }, card_no);
+		if (CommonUtils.parseFloat(price, 0.0f) > card.getMoney()) {
+			throw new CustomException(Constants.CARD_LACK_EXCEPTION);
+		}
+		return card;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void returnFood(long order_id, long order_menu_id) {
+		OrderDetail orderDetail = dataDao.getObjectById(OrderDetail.class, order_menu_id);
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		if (orderDetail != null) {
+			float price = 0.0f;
+			if (orderDetail.getIs_weigh() == 1) {
+				price = price + orderDetail.getPrice() * orderDetail.getQuantity() * orderDetail.getWeight();
+			} else {
+				price = price + orderDetail.getPrice() * orderDetail.getQuantity();
+			}
+			order.setTotal_price(order.getTotal_price() - price);
+			order.setPrice(order.getTotal_price() - price);
+			dataDao.deleteObject(orderDetail);
+			dataDao.updateObject(order);
+		}
+	}
+
+	public void switchFood(long order_id, long order_menu_id, long table_id) throws CustomException {
+		throw new CustomException("{\"message\":\"这个蛋疼的功能就再等等吧\",\"code\":-100}");
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addOrder(String user_id, String store_id, String table_id, String comment, String menu_info, String total_price, String price, int people_num) throws CustomException {
+		long uid = CommonUtils.parseLong(user_id, 0);
+		if (uid <= 0) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		long sid = CommonUtils.parseLong(store_id, 0);
+		if (sid <= 0) {
+			throw new CustomException(Constants.STORE_ERR_EXCEPTION);
+		}
+		long tid = CommonUtils.parseLong(table_id, 0);
+		Order order = new Order();
+		order.setUser_id(uid);
+		order.setStore_id(sid);
+		order.setOrder_time(new Date());
+		order.setPeople_num(people_num);
+		order.setIs_out(0);
+		order.setTable_id(tid);
+		order.setComment(comment);
+		order.setTotal_price(CommonUtils.parseFloat(total_price, 0.0f));
+		order.setPrice(CommonUtils.parseFloat(price, 0.0f));
+		order.setState(2);
+		order.setIs_shop_order(1);
+		dataDao.addObject(order);
+		// ObjectMapper mapper = new ObjectMapper();
+		// mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		// List<OrderDetail> orderDetails = mapper.readValue(menu_info, new TypeReference<List<OrderDetail>>() {
+		// });
+		List<OrderDetail> orderDetails = new Gson().fromJson(menu_info, new TypeToken<List<OrderDetail>>() {
+		}.getType());
+		for (OrderDetail orderDetail : orderDetails) {
+			orderDetail.setOrder_id(order.getOrder_id());
+			dataDao.addObject(orderDetail);
+		}
+		if (tid > 0) {
+			StoreTable storeTable = dataDao.getObjectById(StoreTable.class, tid);
+			storeTable.setCorrent_order(order.getOrder_id());
+			storeTable.setState(2);
+			dataDao.updateObject(storeTable);
+		}
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void changeMenuWeight(long order_id, long order_menu_id, float weight, float price) throws CustomException {
+		OrderDetail orderDetail = dataDao.getObjectById(OrderDetail.class, order_menu_id);
+		if (orderDetail == null) {
+			throw new CustomException(Constants.WEIGHT_EXCEPTION);
+		}
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		if (price == 0.0f) {
+			order.setTotal_price(order.getTotal_price() - orderDetail.getPrice());
+			order.setPrice(order.getPrice() - orderDetail.getPrice());
+			orderDetail.setPrice(0.0f);
+		} else {
+			if (orderDetail.getIs_weigh() == 0) {
+				throw new CustomException(Constants.WEIGHT_EXCEPTION);
+			}
+			float originPrice, newPrice;
+			originPrice = orderDetail.getPrice() * orderDetail.getQuantity() * orderDetail.getWeight();
+			newPrice = orderDetail.getPrice() * orderDetail.getQuantity() * orderDetail.getWeight();
+			orderDetail.setWeight(weight);
+			order.setTotal_price(order.getTotal_price() - originPrice + newPrice);
+			order.setPrice(order.getPrice() - originPrice + newPrice);
+		}
+		dataDao.updateObject(orderDetail);
+		dataDao.updateObject(order);
+	}
+
+	public Order tableOrder(long table_id) {
+		StoreTable storeTable = dataDao.getObjectById(StoreTable.class, table_id);
+		if (storeTable != null) {
+			Order order = dataDao.getObjectById(Order.class, storeTable.getCorrent_order());
+			if (order != null) {
+				return order;
+			}
+		}
+		return null;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void orderAddTable(long table_id, long order_id) throws CustomException {
+		StoreTable sTable = dataDao.getObjectById(StoreTable.class, table_id);
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		if (sTable == null) {
+			throw new CustomException(Constants.SHOP_TABLE_EXCEPTION);
+		}
+		if (order == null) {
+			throw new CustomException(Constants.ORDER_ERR_EXCEPTION);
+		}
+		sTable.setCorrent_order(order_id);
+		order.setTable_id(table_id);
+		dataDao.updateObject(sTable);
+		dataDao.updateObject(order);
+	}
+}

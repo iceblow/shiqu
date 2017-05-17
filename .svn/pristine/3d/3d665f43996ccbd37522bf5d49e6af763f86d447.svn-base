@@ -1,0 +1,282 @@
+<%@ page language="java" contentType="text/html; charset=utf-8"  pageEncoding="utf-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, width=device-width">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="format-detection" content="telephone=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<link rel="stylesheet" href="css/store.css" type="text/css" media="screen">
+<script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
+<link rel="stylesheet" href="iscroll/iscroll2.css">
+<script type="text/javascript" src="iscroll/iscroll.js"></script>
+<script type="text/javascript" src="js/sotoredetail.js"></script>
+<title></title>
+</head>
+<body>
+<form id="labelForm" action="makeorder" method="post">
+<div class="store_list">
+	<input type="hidden" value="1" id="bottom_index" name="bottom_index"/>
+	<div style="position:fixed;top:0px;width:100%;height:45px;line-height:45px;">
+	<div class="topdiv topselect">菜单</div>
+	<div class="topdiv">店铺</div>
+	</div>
+	<div style="position: fixed; top: 45px; width: 100%; height: 33px;">
+		<div style="width: 22%; height: 33px; background: #e9e9e9; color: #857777; line-height: 33px; float:left;">
+			<span style="margin-left: 15%; font-size: 12px;">分类</span><img src="imgs/calo_icon.png" style="width: 10px; height: 9px; margin-left: 5px;"> 
+		</div>
+		<div style="width: 78%; height: 33px; background: #f9f9f9; box-sizing:border-box;border-left:1px solid #ebebeb; color: #857777; line-height: 33px; float:left;">
+			<span style="margin-left: 4%;" id="ccategoryname">
+			</span>
+		</div>
+	</div>
+	<input name="store_id" type="hidden" value="${store_id }">
+	<input type="hidden" id="categorynum" value="${fn:length(categorylist)}">
+	<div  id="contentdiv" style="position:relative;top:78px;margin-bottom:60px">
+	<div id="wrapper"  style="clear:both;width:22%;top:0px;">
+	<div id="scroller" >
+	<div style="left: 0px; width: 100%; background: #ffffff; " id="content_left">
+		<c:forEach items="${categorylist}" var="p" varStatus="status" >
+		<div style="position:relative;">
+		<div class="menucategory <c:if test="${status.first }">select_calo</c:if>" id="category_name_${p.id }" onclick="turnCategoryFirst(${p.id})">
+		${p.name }
+		</div>
+		<div class="categorynum" id="category_num_${p.id }">0</div>
+		</div>
+		</c:forEach>
+	</div>
+	</div>
+	</div>
+	<div id="wrapper2" class="wrapper" style="clear:both;top:0px;width:78%;left:22%;">
+	<div id="scroller" class="scroller">
+	<div style="width:100%;  float:left;" id="content_form">
+		<% int index =  1; %>
+		<c:forEach items="${categorylist}" var="p" >
+		<c:forEach items="${p.menu_list}" var="q"  varStatus="status">
+		<input type="hidden" name="menuid" value="${q.menu_id }">
+		<input type="hidden" id="num_${q.menu_id }" name="menunum" value="0">
+		<div  class='<c:if test="${status.first }">
+		catefirst_${p.id }
+		</c:if>' style="width: 100%; height: 84px;border-left:1px solid #ebebeb; border-bottom: 1px solid #ebebeb;" id="menudiv_<%=index%>">
+			<div style="width: 91.2%; height: 48px; margin-left:4%;margin-right:4.8%; line-height: 48px;font-size:14px" onclick="showalert(${q.menu_id})">${q.menu_name }</div>
+			<div style="width: 96%; height: 36px;margin-left:4%;  color: #ff4532;">
+				<div style="width: 50%; height: 36px; float:left; font-size: 16px;">￥${q.price }<c:if test="${q.origin_price>0 }"><s style="color:#867878;margin-left:8px;font-size:12px">${q.origin_price }</s></c:if><font style="color: #867878;margin-left:8px;font-size:12px;">/${q.unit }</font> </div>
+				<input type="hidden" value="${q.price }" id="price_${q.menu_id}">
+				<div class="menuaddbtn" onclick="addMenu(${q.menu_id},${p.id })" id="add_${q.menu_id }">+</div>
+				<div style="height:30px;line-height:30px;float:right;width:18%;border-top:1px solid #ebebeb;border-bottom:1px solid #ebebeb;display:none;text-align:center;color:#000" id="menunum_${q.menu_id }" >0</div>
+				<div style="width: 30px; height: 30px; float:right; font-size: 32px; border-radius: 15px; border: 1px solid #ebebeb; text-align: center; line-height: 24px;font-weight:bold;position:relative;left:15px;display:none;" onclick="subMenu(${q.menu_id},${p.id })" id="sub_${q.menu_id }">-</div>
+			</div>
+		</div>
+		<input type="hidden" id="orderstr" value="">
+		<input type="hidden" id="menucategory_id_<%=index %>" value="${p.id }">
+		<% index += 1; %>
+		</c:forEach>
+		</c:forEach>
+	</div>
+	</div>
+	</div>
+	</div>
+</div>
+
+<div class="bottom_order">
+	<div style="width: 100%; height: 60px; margin: 0 auto;">
+		<img src="imgs/car_icon.png" style="width:24px; height: 21px; margin-top: 20px; float:left;margin-left: 10px;">
+		<div class="categorynum" style="left: 24px; top: 13px;" id="allmenunum">0</div>
+		<div style="margin-left:15px; height: 21px; margin-top: 20px; float:left; text-align: center; color: #918787;">|</div>
+		<div style="margin-left:14px; height: 21px; margin-top: 20px; float:left; text-align: left; color: #fff;"><font id="allprice">0</font>元</div>
+		<div class="addbtn" onclick="addorder()">下单</div>
+	</div>
+</div>
+<div class="mask" style="display:none;"></div>
+</form>
+<c:forEach items="${categorylist}" var="p" >
+		<c:forEach items="${p.menu_list}" var="q"  varStatus="status">
+		<img src="./imgs/close.png" style="z-index:102;position:absolute;width:32px;top:34px;display:none;" class="closebtn" id="close_${q.menu_id }" onclick="hidealert(${q.menu_id})">
+	<div class="alert" id="alert_${q.menu_id }">
+		<img src="${q.pic_url }"  style="border-radius:8px 8px 0px 0px;" width=100% >
+		<div style="margin-top:16px;margin-bottom:16px;width:100%;">
+		<font style="float:left;margin-left:9px;font-size:16px">${q.menu_name }</font>
+		<font style="color:#867878;font-size:12px;float:right;margin-right:9px;">/${q.unit }</font>
+		<c:if test="${q.origin_price>0 }"><s style="color:#867878;font-size:12px;float:right;margin-left:8px;">${q.origin_price }</s></c:if>
+		<font style="color:#ff4532;font-size:12px;float:right;margin-right:9px;">￥${q.price }</font>
+		</div>
+		<div style=" clear: both;padding-left:9px;padding-right:9px;font-size:12px;color:#9f9f9f;margin-bottom:20px;">
+		${q.description }
+		</div>
+	</div>
+		</c:forEach>
+</c:forEach>
+		
+</body>
+<script type="text/javascript">
+
+var myScroll;
+var rightScroll;
+function loaded() {
+	var height = document.documentElement.clientHeight;
+	$("#contentdiv").css("height",height-78);
+	myScroll = new iScroll('wrapper',{momentum:false,vScroll:true,vScrollbar:false});
+	rightScroll = new iScroll('wrapper2',{momentum:false,onScrollEnd: function () {  
+        //如果滑动到底部，则加载更多数据（距离最底部10px高度）  
+        if(this.y-this.maxScrollY >0){
+		categorychoose(this.y);
+        }
+    } ,onScrollMove: function () {  
+        //如果滑动到底部，则加载更多数据（距离最底部10px高度）  
+        if(this.y-this.maxScrollY >0){
+		categorychoose(this.y);
+          }
+    } ,vScroll:true,vScrollbar:false});
+	var num = $("#categorynum").val();
+	var minheight = num*50;
+	if(minheight>height-78){
+		$("#content_left").css("min-height",minheight);
+	}else{
+		$("#content_left").css("min-height",height-78);
+	}
+	myScroll.refresh();
+	var categoryname =  $(".select_calo").text();
+	$("#ccategoryname").text(categoryname);
+	var height = document.documentElement.clientHeight-100;
+	$(".alert").css("max-height",height);
+// 	var alertheight = $(".alert").height();
+// 	if(alertheight>height){
+// 		$(".alert").css("height",height);
+// 	}
+// 	alert($(".alert").height());
+// 	var top = (document.documentElement.clientHeight - $(".alert").height())/2;
+// 	$(".alert").css("top",top);
+	var width = document.documentElement.clientWidth-100;
+	$(".alert").css("width",width);
+	$(".closebtn").css("left",(width+68)/2);
+}
+
+
+document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
+document.addEventListener('DOMContentLoaded', function () { setTimeout(loaded, 100); }, false); 
+
+ function categorychoose(y){
+	 var scrolly = -1 * y;
+	 var num = parseInt(scrolly/84)+1;
+	 if(num>0){
+		 var category_id = $("#menucategory_id_"+num).val();
+		 $(".select_calo").removeClass("select_calo");
+		 $("#category_name_"+category_id).addClass("select_calo");
+		 var categoryname =  $("#category_name_"+category_id).text();
+		 $("#ccategoryname").text(categoryname); 
+		 myScroll.scrollToElement('#category_name_'+category_id,100);
+	 }
+ }
+ 
+ function turnCategoryFirst(id){
+	 rightScroll.scrollToElement('.catefirst_'+id,100);
+	 $(".select_calo").removeClass("select_calo");
+	 $("#category_name_"+id).addClass("select_calo");
+	 var categoryname =  $("#category_name_"+id).text();
+	 $("#ccategoryname").text(categoryname); 
+ }
+ 
+ function addMenu(menu_id,category_id){
+	 //菜品数量
+	 var menunum = parseInt($("#menunum_"+menu_id).text());
+	 if(menunum==0){
+		$("#menunum_"+menu_id).show(); 
+		 $("#sub_"+menu_id).show();
+	 }
+	 $("#menunum_"+menu_id).text(menunum+1);
+	 $("#num_"+menu_id).val(menunum+1);
+	 //分类数量
+	 var categorynum = parseInt($("#category_num_"+category_id).text());
+	 if(categorynum==0){
+		 $("#category_num_"+category_id).show();
+	}
+	$("#category_num_"+category_id ).text(categorynum+1);
+	//底部栏数量
+	var allmenunum = parseInt($("#allmenunum").text());
+	if(allmenunum==0){
+		$("#allmenunum").show();
+		$(".bottom_order").show();
+		var height = document.documentElement.clientHeight;
+		$("#contentdiv").css("height",height-78-60);
+		var num = $("#categorynum").val();
+		var minheight = num*50;
+		if(minheight>height-78-60){
+			$("#content_left").css("min-height",minheight);
+		}else{
+			$("#content_left").css("min-height",height-78-60);
+		}
+		myScroll.refresh();
+		rightScroll.refresh();
+	}
+	$("#allmenunum").text(allmenunum+1);
+	//底部栏价格相加
+	var allprice = parseFloat($("#allprice").text());
+	var price = parseFloat($("#price_"+menu_id).val());
+	allprice = (allprice+price).toFixed();
+	$("#allprice").text(allprice);
+ }
+ 
+ function subMenu(menu_id,category_id){
+	 var menunum = parseInt($("#menunum_"+menu_id).text());
+	 menunum = menunum - 1;
+	 if(menunum==0){
+			$("#menunum_"+menu_id).hide(); 
+			 $("#sub_"+menu_id).hide();
+	}
+	 $("#menunum_"+menu_id).text(menunum);
+	 $("#num_"+menu_id).val(menunum);
+	 var categorynum = parseInt($("#category_num_"+category_id).text());
+	 categorynum = categorynum - 1;
+	 if(categorynum==0){
+		 $("#category_num_"+category_id).hide();
+	}
+	$("#category_num_"+category_id).text(categorynum);
+	
+	var allmenunum = parseInt($("#allmenunum").text());
+	allmenunum = allmenunum - 1;
+	if(allmenunum==0){
+		$("#allmenunum").hide();
+		$(".bottom_order").hide();
+		var height = document.documentElement.clientHeight;
+		$("#contentdiv").css("height",height-78);
+		var num = $("#categorynum").val();
+		var minheight = num*50;
+		if(minheight>height-78){
+			$("#content_left").css("min-height",minheight);
+		}else{
+			$("#content_left").css("min-height",height-78);
+		}
+		myScroll.refresh();
+		rightScroll.refresh();
+	}
+	$("#allmenunum").text(allmenunum);
+	
+	var allprice = parseFloat($("#allprice").text());
+	var price = parseFloat($("#price_"+menu_id).val());
+	allprice = (allprice-price).toFixed();
+	$("#allprice").text(allprice);
+ }
+ 
+ function showalert(menu_id){
+	 $("#close_"+menu_id).show();
+	 $("#alert_"+menu_id).show();
+	 $(".mask").show();
+ }
+ 
+ function hidealert(menu_id){
+	 $("#close_"+menu_id).hide();
+	 $("#alert_"+menu_id).hide();
+	 $(".mask").hide();
+ }
+ 
+ function addorder(){
+	 $("#labelForm").submit();
+ }
+</script>
+</html>

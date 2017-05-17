@@ -1,0 +1,17 @@
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
+<ul class="nav nav-list">
+	<li class="nav-header">用户管理</li>
+	<li id="menu1"><a href="/userlist">商户用户</a></li>
+	<li id="menu2"><a href="/userlist">门店用户</a></li>
+	<li id="menu3"><a href="/userlist">代理商</a></li>
+	<!-- <li class="active"><a href="/userlist">客户端用户</a></li> -->
+
+	<li class="nav-header">通知管理</li>
+	<li id="menu11"><a href="/userlist">消息管理</a></li>
+	<li id="menu12"><a href="/userlist">公告管理</a></li>
+
+	<li class="nav-header">APP管理</li>
+	<li id="menu21"><a href="/userlist">版本信息</a></li>
+	<li id="menu22"><a href="/userlist">意见反馈</a></li>
+</ul>
+

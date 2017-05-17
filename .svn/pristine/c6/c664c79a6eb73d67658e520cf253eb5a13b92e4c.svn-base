@@ -1,0 +1,72 @@
+package com.daoshun.shiqu.service.wap;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.netdata.StoreInfo;
+import com.daoshun.shiqu.service.BaseService;
+
+@Service("wapStoreService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class WapStoreService extends BaseService{
+
+	public HashMap<String, Object> getStoreList(String location, String keywords, Long category_id, Integer sort, int page_size, int page, String area) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		StringBuffer sql = new StringBuffer("select s.store_id, s.store_name, s.category_name, s.is_out, s.min_send, s.sales_num, s.pic, ");
+		sql.append(" getdistance( s.longitude, s.latitude, " + location + ") as distance, ");
+		sql.append(" convert(timestampdiff(day, s.create_time, now()) < 30, unsigned ) as is_new, ");
+		sql.append(" (select count(c.coupon_id) from t_coupon c where c.store_id =s.store_id) as has_coupon ");
+		sql.append(" from t_stroe s where del_flg = 0 ");
+		String countSql = "select  count(store_id) from Store where del_flg = 0  ";
+		if (!CommonUtils.isEmptyString(keywords)) {
+			sql.append(" and store_name like '%" + keywords + "%' ");
+			countSql = countSql + " and store_name like '%" + keywords + "%' ";
+		}
+		if (!CommonUtils.isEmptyString(area)) {
+			sql.append(" and area like '%" + area + "%' ");
+			countSql = countSql + " and area like '%" + area + "%' ";
+		}
+		if (category_id != null && category_id != 0) {
+			sql.append(" and category_id = " + category_id);
+			countSql = countSql + " and category_id = " + category_id;
+			// sql.append(" and store_id in (select distinct store_id from t_store_category_relation where category_id = " + category_id + ")");
+			// countSql = countSql + " and store_id in (select distinct store_id from t_store_category_relation where category_id = " + category_id + ")";
+		}
+		if(sort!=null){
+			switch (sort) {
+			// 综合排序（距离）
+			case 1:
+				sql.append(" order by getdistance( longitude, latitude, " + location + ") asc ");
+				break;
+			// 热度排序（销量）
+			case 2:
+				sql.append(" order by sales_num desc");
+				break;
+			default:
+				break;
+			}
+		}
+		sql.append(" limit " + page_size + " offset " + (page - 1) * page_size);
+		List<Object[]> stores = dataDao.executeSql(sql.toString());
+		List<StoreInfo> storeInfos = new ArrayList<StoreInfo>();
+		for (Object[] objects : stores) {
+			String picurl = getFilePathById(((java.math.BigInteger) objects[6]).longValue());
+			// List<String> categoryList = (List<String>) dataDao.getObjectsViaParam("from StoreCategory where store_id = " + String.valueOf(objects[0]), null);
+			storeInfos.add(new StoreInfo(objects, picurl));
+		}
+		result.put("store_list", storeInfos);
+		if (storeInfos.size() < 10) {
+			result.put("total", storeInfos.size());
+		} else {
+			result.put("total", dataDao.getCount(countSql));
+		}
+		return result;
+	}
+	
+}

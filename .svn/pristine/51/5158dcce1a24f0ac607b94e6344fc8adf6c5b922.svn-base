@@ -1,0 +1,42 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.pojo;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * 菜品统计信息
+ * 
+ * @author qiuch
+ *
+ */
+@Entity
+@Table(name = "t_menu_statistics")
+public class MenuStatistics {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", length = 20, nullable = false)
+	private long id;
+	@Column(name = "store_id", length = 20, nullable = false)
+	private long store_id;
+	// 菜品id
+	@Column(name = "menu_id", length = 20, nullable = false)
+	private long menu_id;
+	// 当日销售分数
+	@Column(name = "total_sell")
+	private int total_sell;
+	// 统计时间
+	@Column(name = "statistics_time")
+	private Date statistics_time;
+	
+	
+}

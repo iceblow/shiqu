@@ -1,0 +1,101 @@
+package com.daoshun.shiqu.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Menu;
+import com.daoshun.shiqu.pojo.PrintInfo;
+import com.daoshun.shiqu.pojo.StoreArea;
+
+/**
+ * @author wangcl
+ *
+ */
+@Service("printService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class PrintService extends BaseService{
+
+	/**
+	 * 
+	 * @param store_id 店铺ID
+	 * @param pageIndex
+	 * @param pageSize
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public QueryResult<PrintInfo> getPrintListByStoreId(long store_id,int pageIndex,int pageSize){
+		String hql = " from PrintInfo where store_id = "+store_id ;
+		List<PrintInfo> printlist = (List<PrintInfo>) dataDao.pageQueryViaParam(hql + "order by id desc",pageSize,pageIndex, null);
+		long count = (long) dataDao.getFirstObjectViaParam("select count(*) "+hql, null);
+		QueryResult<PrintInfo> result = new QueryResult<PrintInfo>(printlist, (int)count);
+		return result;
+	}
+	
+	public PrintInfo getPrintInfoById(long id){
+		return dataDao.getObjectById(PrintInfo.class, id);
+	}
+	
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void savePrint(PrintInfo printinfo){
+		dataDao.saveOrUpdateObject(printinfo);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void delPrint(Long[] printids){
+		String menuhql = " from Menu where ( print_id1 = :print_id1 or print_id2 = :print_id2 or print_id3 =:print_id3 )";
+		String areahql = " from StoreArea where ( print_id1 = :print_id1 or print_id2 = :print_id2 or print_id3 = :print_id3 )";
+		for(Long printid:printids){
+			if(printid!=null){
+				PrintInfo printinfo = dataDao.getObjectById(PrintInfo.class, printid);
+				if(printinfo!=null){
+					long printId = printinfo.getId();
+					String[] params = {"print_id1","print_id2","print_id3"};
+					List<Menu> menulist = (List<Menu>) dataDao.getObjectsViaParam(menuhql, params, printId,printId,printId);
+					for(Menu menu:menulist){
+						if(menu.getPrint_id1()==printId){
+							menu.setPrint_id1(0);
+						}
+						if(menu.getPrint_id2()==printId){
+							menu.setPrint_id2(0);
+						}
+						if(menu.getPrint_id3()==printId){
+							menu.setPrint_id3(0);
+						}
+						dataDao.updateObject(menu);
+					}
+					List<StoreArea> arealist = (List<StoreArea>) dataDao.getObjectsViaParam(areahql, params, printId,printId,printId);
+					for(StoreArea area:arealist){
+						if(area.getPrint_id1()==printId){
+							area.setPrint_id1(0);
+						}
+						if(area.getPrint_id2()==printId){
+							area.setPrint_id2(0);
+						}
+						if(area.getPrint_id3()==printId){
+							area.setPrint_id3(0);
+						}
+						dataDao.updateObject(area);
+					}
+					dataDao.deleteObject(printinfo);
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<PrintInfo> getPrintListByStoreId(long store_id,int scope){
+		String hql = " from PrintInfo where store_id = "+store_id   ;
+		if(scope==1){
+			hql += " and scope in ( 1, 2, 3)";
+		}else if(scope == 2){
+			hql += " and scope in ( 4, 5)";
+		}
+		List<PrintInfo> printlist = (List<PrintInfo>) dataDao.getObjectsViaParam(hql + "order by id desc", null);
+		return printlist;
+	}
+}

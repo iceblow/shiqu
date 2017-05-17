@@ -1,0 +1,69 @@
+function pullUpAction() {
+	var pushflg = $("#pushflg").val();
+	if (pushflg == 0) {
+		loadMoreShopList();
+	}
+}
+
+
+function loadMoreShopList() {
+	$("#loadmorecontent").text("努力加载中......");
+	$("#pushflg").val(1);
+	var pageIndex = $("#pageIndex").val();
+	pageIndex = parseInt(pageIndex) + 1;
+	var lat = $("#lat").val();
+	var lon = $("#lon").val();
+	$.ajax({
+		url:'./storelist',
+		type:'post',
+		data:{'lon':lon,'lat':lat,'pageIndex':pageIndex},
+		success:function(msg){
+			var storelist = msg.store_list;
+			if(storelist==null||storelist.length==0){
+				$("#loadmorecontent").text("暂无更多店铺!");
+			}else{
+				var html = "";
+				for(var i=0;i<storelist.length;i++){
+					html += '<div class="storediv" onclick="storedetail('+storelist[i].store_id+')">';
+					html += '<div class="storemarginauto" >';
+					html += '<div style="height: 10px;"></div>';
+					html += '<div style="width: 100%; height: 41px;">';
+					html += '<div style="width: 16%;height: 41px; float:left;">';
+					html += '<img src="'+storelist[i].pic_url+'" style="width: 41px; height: 41px; border-radius: 8px;">';
+					html += '</div><div style="width: 80%; height: 41px; float:left; margin-left: 4%;" class="overflow_hidden">';
+					html += '<div style="width: 100%; height: 21px; font-size: 15px; line-height: 21px;"><font style="float: left;">'+storelist[i].store_name+'</font><font style="float: right;">';
+					if(storelist[i].distance<1000){
+						html += parseInt(storelist[i].distance)+"m";
+					}else{
+						html += parseInt(storelist[i].distance/1000)+"km";
+					}
+					html += '</font></div>';
+					html += '<div style="width: 100%; height: 20px; color: #857777; font-size: 12px; line-height: 20px;" >';
+					html += storelist[i].sales_num+'总销量&nbsp;&nbsp;';
+					if(storelist[i].sales_num==1){
+						html += '|&nbsp;&nbsp;起送价'+storelist[i].min_send+'元&nbsp;&nbsp;';
+					}
+					if(typeof(storelist[i].category_name)!="undefined"){
+					html += '|&nbsp;&nbsp;'+storelist[i].category_name;
+					}
+					html +=	'</div></div></div><div style="width: 100%; height: 41px;"><div style="width: 80%; height: 41px; margin-left: 20%;"><div style="height: 11px;"></div>';
+					if(storelist[i].is_new==1){
+						html +=	'<div style="width: 19px; height: 19px; border-radius: 19px; background: #3ad4d4; color: #fff; text-align: center; font-size: 11px; line-height: 19px; float:left;margin-right:4px">新</div>';	
+					}
+					if(storelist[i].has_coupon>0){
+						html +=	'<div style="width: 19px; height: 19px; border-radius: 19px; background: #ffba3f; color: #fff; text-align: center; font-size: 11px; line-height: 19px; float:left; margin-right: 4px;">券</div>';
+					}
+					if(storelist[i].sales_num==1){
+						html +='<div style="width: 19px; height: 19px; border-radius: 19px; background: #ff4532; color: #fff; text-align: center; font-size: 11px; line-height: 19px; float:left;">外</div>';
+					}
+					html +=	'</div></div></div></div>';
+				}
+				$("#loadmorecontent").text("下拉加载更多");
+				$(".store_list").append(html);
+				$("#pageIndex").val(pageIndex);
+				$("#pushflg").val(0);
+				myScroll.refresh();
+			}
+		}
+	})
+}

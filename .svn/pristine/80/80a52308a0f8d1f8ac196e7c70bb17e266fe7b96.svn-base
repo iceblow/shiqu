@@ -1,0 +1,370 @@
+package com.daoshun.shiqu.pojo;
+
+import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+@Entity
+@Table(name = "t_order")
+public class Order {
+
+	// 订单id
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "order_id", length = 20, nullable = false)
+	private long order_id;
+	// 流水号
+	@Column(name = "serial_num")
+	private String serial_num;
+	// 用户id
+	@Column(name = "user_id", length = 20, nullable = false)
+	private long user_id;
+	// 商家id
+	@Column(name = "store_id", length = 20, nullable = false)
+	private long store_id;
+	// 下单人姓名
+	@Column(name = "order_name", length = 50)
+	private String order_name;
+	// 就餐人数
+	@Column(name = "people_num")
+	private int people_num;
+	// 下单人联系电话
+	@Column(name = "phone", length = 20)
+	private String phone;
+	// 0客户端下单 1商家端下单
+	@Column(name = "is_shop_order")
+	private int is_shop_order;
+	// 0堂食 1外卖
+	@Column(name = "is_out")
+	private int is_out;
+	// 下单时间
+	@Column(name = "order_time")
+	private Date order_time;
+	// 配送地址
+	@Column(name = "address")
+	private String address;
+	// (预计)配送时间
+	@Column(name = "send_time")
+	private String send_time;
+	// 就餐时间
+	@Column(name = "dining_time")
+	private Date dining_time;
+	// 结账时间
+	@Column(name = "check_time")
+	private Date check_time;
+	// 桌位
+	@Column(name = "table_id", length = 100)
+	private long table_id;
+	// 付款方式 1线下(现金) 2支付宝 3刷卡 4充值卡 5签单 6免单
+	@Column(name = "pay_type", length = 2)
+	private int pay_type;
+	// 订单总额
+	@Column(name = "total_price", nullable = false)
+	private float total_price;
+	// 实付金额
+	@Column(name = "price", nullable = false)
+	private float price;
+	// 使用的优惠券
+	@Column(name = "coupon_id", length = 20)
+	private Long coupon_id;
+	// 备注
+	@Column(name = "comment", length = 500)
+	private String comment;
+	// 状态 1下单(店家未确认) 2店家已确认 3店家拒单 4已付款 5 取消 //3 4 5都属于已完成
+	@Column(name = "state")
+	private int state;
+	// 配送费
+	@Column(name = "send_money")
+	private float send_money;
+	// ----------------------------------------------
+	// 折扣率
+	@Column(name = "discount")
+	private float discount;
+	// 抹零
+	@Column(name = "moling")
+	private float moling;
+	// 卡号
+	@Column(name = "card_no")
+	private String card_no;
+	// 签单免单人id
+	@Column(name = "signer_id")
+	private long signer_id;
+	// 能够打折的菜品总额
+	@Column(name = "can_discount_price")
+	private long can_discount_price;
+	
+	//拒单理由
+	@Column(name = "refuse_reason")
+	private String refuse_reason;
+	// ----------------------------------------------
+	// 订单菜品详细信息
+	@OneToMany(cascade = CascadeType.REFRESH, fetch = FetchType.EAGER)
+	@JoinColumn(name = "order_id")
+	private List<OrderDetail> menu_list = new ArrayList<OrderDetail>();
+	// ------------------------
+	@Transient
+	private Store store;
+	@Transient
+	private String table_no;
+
+	public long getOrder_id() {
+		return order_id;
+	}
+
+	public void setOrder_id(long order_id) {
+		this.order_id = order_id;
+	}
+
+	public long getUser_id() {
+		return user_id;
+	}
+
+	public void setUser_id(long user_id) {
+		this.user_id = user_id;
+	}
+
+	public long getStore_id() {
+		return store_id;
+	}
+
+	public void setStore_id(long store_id) {
+		this.store_id = store_id;
+	}
+
+	public String getOrder_name() {
+		return order_name;
+	}
+
+	public void setOrder_name(String order_name) {
+		this.order_name = order_name;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public int getIs_out() {
+		return is_out;
+	}
+
+	public void setIs_out(int is_out) {
+		this.is_out = is_out;
+	}
+
+	public Date getOrder_time() {
+		return order_time;
+	}
+
+	public void setOrder_time(Date order_time) {
+		this.order_time = order_time;
+	}
+
+	public String getSend_time() {
+		return send_time;
+	}
+
+	public void setSend_time(String send_time) {
+		this.send_time = send_time;
+	}
+
+	public Date getDining_time() {
+		return dining_time;
+	}
+
+	public void setDining_time(Date dining_time) {
+		this.dining_time = dining_time;
+	}
+
+	public Date getCheck_time() {
+		return check_time;
+	}
+
+	public void setCheck_time(Date check_time) {
+		this.check_time = check_time;
+	}
+
+	public long getTable_id() {
+		return table_id;
+	}
+
+	public void setTable_id(long table_id) {
+		this.table_id = table_id;
+	}
+
+	public int getPay_type() {
+		return pay_type;
+	}
+
+	public void setPay_type(int pay_type) {
+		this.pay_type = pay_type;
+	}
+
+	public float getTotal_price() {
+		return total_price;
+	}
+
+	public void setTotal_price(float total_price) {
+		this.total_price = total_price;
+	}
+
+	public float getPrice() {
+		return price;
+	}
+
+	public void setPrice(float price) {
+		this.price = price;
+	}
+
+	public Long getCoupon_id() {
+		return coupon_id;
+	}
+
+	public void setCoupon_id(Long coupon_id) {
+		this.coupon_id = coupon_id;
+	}
+
+	public String getComment() {
+		return comment;
+	}
+
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
+
+	public List<OrderDetail> getMenu_list() {
+		return menu_list;
+	}
+
+	public void setMenu_list(List<OrderDetail> menu_list) {
+		this.menu_list = menu_list;
+	}
+
+	public void setState(int state) {
+		this.state = state;
+	}
+
+	public int getState() {
+		return state;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public float getSend_money() {
+		return send_money;
+	}
+
+	public void setSend_money(float send_money) {
+		this.send_money = send_money;
+	}
+
+	public String getSerial_num() {
+		return serial_num;
+	}
+
+	public void setSerial_num(String serial_num) {
+		this.serial_num = serial_num;
+	}
+
+	public int getIs_shop_order() {
+		return is_shop_order;
+	}
+
+	public void setIs_shop_order(int is_shop_order) {
+		this.is_shop_order = is_shop_order;
+	}
+
+	public float getDiscount() {
+		return discount;
+	}
+
+	public void setDiscount(float discount) {
+		this.discount = discount;
+	}
+
+	public float getMoling() {
+		return moling;
+	}
+
+	public void setMoling(float moling) {
+		this.moling = moling;
+	}
+
+	public String getCard_no() {
+		return card_no;
+	}
+
+	public void setCard_no(String card_no) {
+		this.card_no = card_no;
+	}
+
+	public long getSigner_id() {
+		return signer_id;
+	}
+
+	public void setSigner_id(long signer_id) {
+		this.signer_id = signer_id;
+	}
+
+	public long getCan_discount_price() {
+		return can_discount_price;
+	}
+
+	public void setCan_discount_price(long can_discount_price) {
+		this.can_discount_price = can_discount_price;
+	}
+
+	public int getPeople_num() {
+		return people_num;
+	}
+
+	public void setPeople_num(int people_num) {
+		this.people_num = people_num;
+	}
+
+	public Store getStore() {
+		return store;
+	}
+
+	public void setStore(Store store) {
+		this.store = store;
+	}
+
+	public String getTable_no() {
+		return table_no;
+	}
+
+	public void setTable_no(String table_no) {
+		this.table_no = table_no;
+	}
+
+	public String getRefuse_reason() {
+		return refuse_reason;
+	}
+
+	public void setRefuse_reason(String refuse_reason) {
+		this.refuse_reason = refuse_reason;
+	}
+
+}

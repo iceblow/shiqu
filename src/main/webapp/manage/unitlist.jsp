@@ -1,0 +1,130 @@
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html>
+<html>
+<head>
+<title>店铺分类管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script type="text/javascript" src="./bootstrap/jquery-2.0.0.min.js"></script>
+<script type="text/javascript" src="./bootstrap/jquery-ui"></script>
+<link href="./bootstrap/bootstrap-combined.min.css" rel="stylesheet" media="screen">
+<link href="./css/style.css" rel="stylesheet" media="screen">
+<script type="text/javascript" src="./bootstrap/bootstrap.min.js"></script>
+<script type="text/javascript">
+	$(function() {
+		$("#menu25").addClass('active');
+	})
+
+ 	function edit(cid) {
+		$("#hidden_cid").val(cid);
+		$("#myModal").modal('show');
+	 } 
+	
+	function clearForm(){
+		$("#alert_name").val("");
+		$("#hidden_cid").val(0);
+	}
+</script>
+</head>
+<body>
+	<div style="margin: 10px; border-width: 1px; border-style: solid; border-color: #DDD; border-collapse: separate; border-radius: 5px;">
+
+		<div class="container-fluid" style="margin-top: 10px;">
+
+
+			<div class="row-fluid">
+				<div class="span12">
+					<div class="navbar">
+						<div class="navbar-inner">
+							<div class="container-fluid">
+								<!-- <a data-target=".navbar-responsive-collapse" data-toggle="collapse" class="btn btn-navbar">
+									<span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+								</a> -->
+								<a href="#" class="brand">食趣后台管理</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+			<div class="row-fluid">
+				<div class="span2">
+					<jsp:include page="left.jsp" />
+				</div>
+				<div class="span10">
+					<div class="row-fluid">
+						<div class="span12">
+							<button class="btn btn-primary" type="button" style="float: right;" data-toggle="modal" data-target="#myModal">添加单位</button>
+						</div>
+					</div>
+
+
+					<table class="table table-condensed table-hover table-bordered" style="margin-top: 10px;">
+						<thead>
+							<tr>
+								<th>单位名</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach items="${unitlist}" var="c">
+								<tr>
+									<td>${c.unit_name}</td>
+									<td><button class="btn btn-small btn-info" type="button" onclick="edit(${c.unit_id})" style="float: left;">编辑</button>
+										<form action="./delmenuUnit" method="post" style="float: left; margin-left: 5px; margin-bottom:0px;">
+											<button class="btn btn-small btn-danger" type="submit">删除</button>
+											<input type="hidden" name="unit_id" value="${c.unit_id}" />
+										</form></td>
+								</tr>
+							</c:forEach>
+						</tbody>
+					</table>
+
+
+
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="clearForm()">&times;</button>
+					<h4 class="modal-title" id="myModalLabel">菜品单位</h4>
+				</div>
+
+
+				<div class="row-fluid">
+					<form action="./editmenuUnit" method="post" enctype="multipart/form-data">
+						<div class="span10">
+							<fieldset style="margin: 15px;">
+								<div style="line-height: 40px; margin-left: 10px;">
+									单位名称：&nbsp;
+									<input type="text" id="alert_name" name="unit_name" value="" style="width: 240px; margin-top: 5px;" />
+								</div>
+								<input type="hidden" id="hidden_cid" name="unit_id" value="0" />
+							</fieldset>
+						</div>
+						<div class="span2">
+							<button class="btn btn-primary btn-primary" style="margin-top: 20px; margin-bottom: 20px; margin-right: 15px; float: right;" type="submit">提交</button>
+						</div>
+					</form>
+				</div>
+
+
+
+
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal" onclick="clearForm()">关闭</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+.statediv {
+    width: 100px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    margin-left: 10px;
+    background-color:#bdc6d7;
+    color: #ffffff;
+    float: left;
+    margin-top: 30px;
+    cursor:pointer;
+}
+
+.onchoose{
+	background-color: #5f97fa;
+}

@@ -1,0 +1,193 @@
+package com.daoshun.shiqu.controller.wap;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Order;
+import com.daoshun.shiqu.pojo.OrderDetail;
+import com.daoshun.shiqu.service.wap.WapOrderService;
+
+@Controller
+@RequestMapping("/wap")
+public class WapOrder {
+
+	@Resource(name="wapOrderService")
+	WapOrderService wapOrderService;
+	
+	/**
+	 * 当前订单(未完成订单 state=1or2)
+	 * @return
+	 */
+	@RequestMapping("/presentorderlist")
+	public HashMap<String,Object> presentorderlist( Integer pageIndex, HttpSession session){
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		long wapuserid = CommonUtils.parseLong(String.valueOf(session.getAttribute("wapuserid")), 0) ;  
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Order> qresult =  wapOrderService.getPresentOrderListBypage(21, pageIndex, Constants.WAPSTORELISTSIZE);
+		result.put("orderlist",  qresult.getDataList());
+		result.put("total", qresult.getTotal());
+		return result;
+	}
+	
+	@RequestMapping("/pullpresentorderlist")
+	@ResponseBody
+	public HashMap<String, Object> pullpresentorderlist(Integer pageIndex, HttpSession session){
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		long wapuserid = CommonUtils.parseLong(String.valueOf(session.getAttribute("wapuserid")), 0) ; 
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Order> qresult =  wapOrderService.getPresentOrderListBypage(21, pageIndex, Constants.WAPSTORELISTSIZE);
+		result.put("orderlist",  qresult.getDataList());
+		result.put("total", qresult.getTotal());
+		return result;
+	}
+	
+	/**
+	 * 堂食
+	 * @param pageIndex
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/hereorderlist")
+	public HashMap<String, Object> hereorderlist(Integer pageIndex, HttpSession session, int is_out){
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		long wapuserid = CommonUtils.parseLong(String.valueOf(session.getAttribute("wapuserid")), 0) ; 
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Order> qresult =  wapOrderService.getIsOutOrderListBypage(21, pageIndex, is_out, Constants.WAPSTORELISTSIZE);
+		result.put("orderlist",  qresult.getDataList());
+		result.put("total", qresult.getTotal());
+		return result;
+	}
+	
+	/**
+	 * 堂食
+	 * @param pageIndex
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/pullhereorderlist")
+	@ResponseBody
+	public HashMap<String, Object> pullhereorderlist(Integer pageIndex, HttpSession session, int is_out){
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		long wapuserid = CommonUtils.parseLong(String.valueOf(session.getAttribute("wapuserid")), 0) ; 
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Order> qresult =  wapOrderService.getIsOutOrderListBypage(21, pageIndex, is_out, Constants.WAPSTORELISTSIZE);
+		result.put("orderlist",  qresult.getDataList());
+		result.put("total", qresult.getTotal());
+		return result;
+	}
+	
+	/**
+	 * 外卖
+	 * @param pageIndex
+	 * @param session
+	 * @param is_out
+	 * @return
+	 */
+	@RequestMapping("/outorderlist")
+	public HashMap<String, Object> outorderlist(Integer pageIndex, HttpSession session, int is_out){
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		long wapuserid = CommonUtils.parseLong(String.valueOf(session.getAttribute("wapuserid")), 0) ; 
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Order> qresult =  wapOrderService.getIsOutOrderListBypage(21, pageIndex, is_out, Constants.WAPSTORELISTSIZE);
+		result.put("orderlist",  qresult.getDataList());
+		result.put("total", qresult.getTotal());
+		return result;
+	}
+	
+	/**
+	 * 外卖
+	 * @param pageIndex
+	 * @param session
+	 * @param is_out
+	 * @return
+	 */
+	@RequestMapping("/pulloutorderlist")
+	@ResponseBody
+	public HashMap<String, Object> pulloutorderlist(Integer pageIndex, HttpSession session, int is_out){
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		long wapuserid = CommonUtils.parseLong(String.valueOf(session.getAttribute("wapuserid")), 0); 
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Order> qresult =  wapOrderService.getIsOutOrderListBypage(21, pageIndex, is_out, Constants.WAPSTORELISTSIZE);
+		result.put("orderlist",  qresult.getDataList());
+		result.put("total", qresult.getTotal());
+		return result;
+	}
+	
+	@RequestMapping("/orderdetail")
+	public ModelAndView orderdetail(Long order_id){
+		ModelAndView mov = new ModelAndView();
+		Order order = wapOrderService.getOrderDetail(order_id);
+		List<OrderDetail> neworderdetail = new ArrayList<OrderDetail>();
+		List<OrderDetail> orderdetails = order.getMenu_list();
+		for(OrderDetail detail:orderdetails){
+			if(detail.getDetail_flg()>=0){
+				neworderdetail.add(detail);
+			}
+		}
+		order.setMenu_list(neworderdetail);
+		mov.addObject("order", order);
+		if(order.getIs_out() == 0){
+			//堂食 
+			if(order.getState() == 1){
+				//店家未确认
+				mov.setViewName("wap/instateon.jsp");
+			}else if(order.getState() == 2){
+				//店家已确认
+				mov.setViewName("wap/instatetw.jsp");
+			}else if(order.getState() == 3){
+				//店家拒单
+				mov.setViewName("wap/instateth.jsp");
+			}else if(order.getState() == 4){
+				//已付款
+				mov.setViewName("wap/instatefo.jsp");
+			}else{
+				//取消
+				mov.setViewName("wap/instatefi.jsp");
+			}
+		}else{
+			//外卖
+			if(order.getState() == 1){
+				//店家未确认
+				mov.setViewName("wap/outstateon.jsp");
+			}else if(order.getState() == 2){
+				//店家已确认
+				mov.setViewName("wap/outstatetw.jsp");
+			}else if(order.getState() == 3){
+				//店家拒单
+				mov.setViewName("wap/outstateth.jsp");
+			}else if(order.getState() == 4){
+				//已付款
+				mov.setViewName("wap/outstatefo.jsp");
+			}else{
+				//取消
+				mov.setViewName("wap/outstatefi.jsp");
+			}
+		}
+		return mov;
+	}
+}

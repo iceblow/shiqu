@@ -1,0 +1,171 @@
+.stateview{
+	font-size:14px;
+	font-family:宋体;
+	height:100px;
+	line-height:100px;
+}
+
+.statediv{
+	width:100px;
+	height:40px;
+	line-height:40px;
+	text-align:center;
+	margin-left:10px;
+	color:#ffffff;
+	float:left;
+	margin-top:30px;
+}
+
+.tableview{
+	float:left;
+	width:145px;
+	height:160px;
+	margin-right:22px;
+	cursor:pointer;
+}
+
+.tableview_name{
+	width:145px;
+	height:65px;
+	line-height:65px;
+	color:#ffffff;
+	font-size:22px;
+	font-family:'微软雅黑';
+	text-align:center;
+}
+
+.tableview_money{
+	width:115px;
+	margin-left:15px;
+	height:52px;
+	line-height:52px;
+	border-bottom: #e4e6ea 1px solid;
+}
+
+.tableview_people{
+	width:115px;
+	margin-left:15px;
+	height:47px;
+	line-height:47px;
+}
+
+
+.alert{
+	background: #fff;
+ 	position: fixed;
+    border-radius: 0px;
+    width: 740px;
+    height:600px;
+    top: 0px;
+    z-index: 10;
+    padding:0;
+}
+
+.alert_content_div{
+	float:left;
+	text-align:left;
+	font-size:14px;
+	font-family:'宋体';
+	font-weight: bold;
+	height: 48px;
+}
+
+.alert_content_div_nobold{
+	float:left;
+	text-align:left;
+	font-size:14px;
+	font-family:'宋体';
+	height: 49px;
+}
+
+.ling{
+	float:left;
+	margin-top: 33px;
+}
+
+.menu_div{
+	width:105px;
+	height:125px;
+	float:left;
+}
+
+.menu_img{
+	cursor:pointer;
+	width:104px;
+	float:left;
+	text-align:center;
+	margin-top:28px;
+}
+
+.menu_text{
+	margin-top:10px;
+	font-size:12px;
+	font-weight:bold;
+}
+
+.changeTable {
+    background: #fff;
+    position: fixed;
+    border-radius: 0px;
+    width: 450px;
+    height: 210px;
+    top: 100px;
+    z-index: 10;
+    padding: 0;
+}
+
+.weightAlert{
+	  background: #fff;
+    position: fixed;
+    border-radius: 0px;
+    width: 450px;
+    height: 200px;
+    top: 100px;
+    z-index: 10;
+    padding: 0;
+}
+
+.payAlert{
+	background: #fff;
+    position: fixed;
+    border-radius: 0px;
+    width: 900px;
+    height: 500px;
+    top: 0px;
+    z-index: 10;
+    padding: 0;
+}
+
+.category{
+	background-color: #ffffff;
+    background-image: none !important;
+    filter: none !important;
+    border: 1px solid #e5e5e5;
+    outline: none;
+    width: 162px !important;
+    line-height: 30px;
+    height: 34px !important;
+    margin-top: 20px;
+}
+
+.detail_upload{
+	width:100px;
+	height:40px;
+	background-color:#6097fb;
+	border:none;
+	border-radius:0px;
+	float:right;
+	margin-right:50px;
+}
+
+.oper_btn{
+	background-color:#6097fb;
+	border:none;
+	border-radius:0px;
+	float:right;
+	margin-right:10px;
+	padding:0;
+	font-size:12px;
+	width:34px;
+	height:21px
+}

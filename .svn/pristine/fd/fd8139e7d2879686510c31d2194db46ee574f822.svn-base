@@ -1,0 +1,102 @@
+@CHARSET "UTF-8";
+
+body{
+/* 	background:url(../imgs/love_background.png) no-repeat; */
+/* 	background-size: cover; */
+	font-size: 14px;
+	font-family: "微软雅黑";
+	padding: 0;
+	margin: 0;
+}
+
+.fixedposition{
+	background-color:#efefef;
+	padding-left:3.75%;
+	font-size:12px;
+	padding-right:3.75%;
+	height:34px;
+	line-height:34px;
+}
+
+.orderlist{
+	position:relative;
+	width:100%;
+}
+
+.order_detail_top{
+	width: 100%; 
+	height: 54px; 
+	background: #fff;
+}
+
+.interimdiv{
+	width: 100%; 
+	height: 7px; 
+	background: #f0f0f0;
+}
+
+.order_detail_center{
+	width: 92%; 
+	height: 43px; 
+	line-height: 43px; 
+	margin: 0 auto;
+	font-size: 12px; 
+	border-bottom: 1px solid #e5e5e5;
+}
+
+.order_detail_bottom{
+	width: 100%; 
+	height: 60px;
+	position: fixed;
+	bottom: 0px;
+	background: #756969;
+	opacity: 1;
+	border-top: 1px solid #e5e5e5;
+	z-index: 10;
+}
+
+.paybutton{
+	background: #f0f0ef; 
+	color: #c8c8c8; 
+	font-size: 17px; 
+	width: 74px; 
+	height: 34px; 
+	text-align: center; 
+	line-height: 34px; 
+	border-radius: 16px;
+}
+
+.cancelbutton{
+	background: #ffba3f; 
+	color: #fff; 
+	font-size: 17px; 
+	width: 74px; 
+	height: 34px; 
+	text-align: center; 
+	line-height: 34px; 
+	border-radius: 16px;
+}
+
+.mask{
+	position: fixed;
+	top: 0px;
+	bottom: 0px; 
+	left: 0px;
+	right: 0px;
+	background: #3f3e41;
+	opacity: 0.5;
+	z-index: 101;
+}
+
+.messgealert{
+	position: fixed; 
+	width: 200px;
+	min-height: 50px; 
+	background: #000;
+	border-radius: 4px;
+	padding: 10px;
+	color: #fff;
+	word-break:break-all;
+	line-height: 15px;
+	z-index: 102;
+}

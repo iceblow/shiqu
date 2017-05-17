@@ -1,0 +1,415 @@
+package com.daoshun.shiqu.controller;
+
+import java.util.HashMap;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.daoshun.exception.CustomException;
+import com.daoshun.exception.NullParameterException;
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.service.UserService;
+
+@Controller
+@RequestMapping("/api/user")
+public class ApiUserController extends ApiBaseController {
+
+	@Resource(name = "userService")
+	private UserService userService;
+
+	/**
+	 * 登录
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/login", produces = "application/json; charset=UTF-8")
+	public String login(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String account = request.getParameter("account");
+			String password = request.getParameter("password");
+			CommonUtils.validateEmpty(account);
+			CommonUtils.validateEmpty(password);
+			map.put("user", userService.login(account, password));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 注册
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/register", produces = "application/json; charset=UTF-8")
+	public String register(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_name = request.getParameter("user_name");
+			String password = request.getParameter("password");
+			String real_name = request.getParameter("real_name");
+			String phone = request.getParameter("phone");
+			String vcode = request.getParameter("vcode");
+			CommonUtils.validateEmpty(user_name);
+			CommonUtils.validateEmpty(password);
+			CommonUtils.validateEmpty(phone);
+			CommonUtils.validateEmpty(vcode);
+			map.put("user", userService.register(user_name, password, phone, real_name, vcode));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 第三方登录
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/thirdpartlogin", produces = "application/json; charset=UTF-8")
+	public String thirdPartLogin(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String type = request.getParameter("type");
+			String openid = request.getParameter("openid");
+			CommonUtils.validateEmpty(openid);
+			int typeint = CommonUtils.parseInt(type, 0);
+			if (typeint != 1 || typeint != 2) {
+				throw new NullParameterException();
+			}
+			map.put("user", userService.thirdPartLogin(typeint, openid));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取验证码
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/getvcode", produces = "application/json; charset=UTF-8")
+	public String getvcode(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String phone = request.getParameter("phone");
+			String type = request.getParameter("type");
+			CommonUtils.validateEmpty(phone);
+			int typeint = CommonUtils.parseInt(type, 0);
+			String vcode = userService.getVcode(typeint, phone);
+			map.put("vcode", vcode);
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			CommonUtils.sendSms(phone, "您的验证码为：" + vcode);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 修改用户信息
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/edituser", produces = "application/json; charset=UTF-8")
+	public String editUser(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			String password = request.getParameter("password");
+			String real_name = request.getParameter("real_name");
+			String nick_name = request.getParameter("nick_name");
+			String birthday = request.getParameter("birthday");
+			String gender = request.getParameter("gender");
+			String phone = request.getParameter("phone");
+			long file_id = getFileId(request, true, 1);
+			CommonUtils.validateEmpty(user_id);
+			map.put("user", userService.editUser(CommonUtils.parseLong(user_id, 0), nick_name, password, phone, real_name, file_id, birthday, gender));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 修改密码
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/changepwd", produces = "application/json; charset=UTF-8")
+	public String changePasswod(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			String old_pwd = request.getParameter("old_pwd");
+			String new_pwd = request.getParameter("new_pwd");
+			CommonUtils.validateEmpty(user_id);
+			CommonUtils.validateEmpty(old_pwd);
+			CommonUtils.validateEmpty(new_pwd);
+			map.put("user", userService.changePassword(CommonUtils.parseLong(user_id, 0), old_pwd, new_pwd));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 我的充值卡
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/mycard", produces = "application/json; charset=UTF-8")
+	public String myCard(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			CommonUtils.validateEmpty(user_id);
+			map.put("card_list", userService.getMyCards(CommonUtils.parseLong(user_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 我的优惠券
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/mycoupon", produces = "application/json; charset=UTF-8")
+	public String myCoupon(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			CommonUtils.validateEmpty(user_id);
+			map.put("coupon_list", userService.getMyCoupon(CommonUtils.parseLong(user_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 我的收藏
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/mycollection", produces = "application/json; charset=UTF-8")
+	public String myCollection(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			CommonUtils.validateEmpty(user_id);
+			map.put("store_list", userService.getMyCollection(CommonUtils.parseLong(user_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 我的订单
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/myorder", produces = "application/json; charset=UTF-8")
+	public String myOrder(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			CommonUtils.validateEmpty(user_id);
+			map.putAll(userService.getMyOrder(CommonUtils.parseLong(user_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 我的收货地址
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/address", produces = "application/json; charset=UTF-8")
+	public String myAddress(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String user_id = request.getParameter("user_id");
+			CommonUtils.validateEmpty(user_id);
+			map.put("addr_list", userService.getMyAddress(CommonUtils.parseLong(user_id, 0)));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 删除收货地址
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/deladdr", produces = "application/json; charset=UTF-8")
+	public String delAddr(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String addr_id = request.getParameter("addr_id");
+			CommonUtils.validateEmpty(addr_id);
+			userService.delAddress(CommonUtils.parseLong(addr_id, 0));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 删除收货地址
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/editaddr", produces = "application/json; charset=UTF-8")
+	public String editAddr(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			long user_id = CommonUtils.parseLong(request.getParameter("user_id"), 0);
+			long addr_id = CommonUtils.parseLong(request.getParameter("addr_id"), 0);
+			String receiver = request.getParameter("receiver");
+			String address = request.getParameter("address");
+			String phone = request.getParameter("phone");
+			String province = request.getParameter("province");
+			String city = request.getParameter("city");
+			String area = request.getParameter("area");
+			int is_default = CommonUtils.parseInt(request.getParameter("is_default"), 0);
+			userService.editAddress(addr_id, user_id, receiver, address, phone, province, city, area, is_default);
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 意见反馈
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/feedback", produces = "application/json; charset=UTF-8")
+	public String feedback(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			String info = request.getParameter("info");
+			String content = request.getParameter("content");
+			String user_id = request.getParameter("user_id");
+			String version = request.getParameter("version");
+			CommonUtils.validateEmpty(info);
+			CommonUtils.validateEmpty(content);
+			CommonUtils.validateEmpty(version);
+			userService.feedback(info, content, version, CommonUtils.parseLong(user_id, 0));
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 意见反馈
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/pushinfo", produces = "application/json; charset=UTF-8")
+	public String pushinfo(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			int is_receive = CommonUtils.parseInt(request.getParameter("is_receive"), 0);
+			int deviver_type = CommonUtils.parseInt(request.getParameter("deviver_type"), 0);
+			String client_id = request.getParameter("client_id");
+			String user_id = request.getParameter("user_id");
+			CommonUtils.validateEmpty(client_id);
+			CommonUtils.validateEmpty(user_id);
+			userService.updatePushInfo(CommonUtils.parseLong(user_id, 0), client_id, is_receive,deviver_type);
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (CustomException e) {
+			return e.getMessage();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+}

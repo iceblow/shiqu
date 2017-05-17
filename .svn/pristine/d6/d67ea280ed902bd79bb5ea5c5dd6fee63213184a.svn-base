@@ -1,0 +1,57 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/login.css" rel="stylesheet">
+<title>欢迎登陆食趣商家管理平台</title>
+</head>
+<body>
+<div style="text-align:center;font-size:9em;margin:auto;color:#fff;">
+Welcome
+</div>
+<div class="top-content">
+<div style="font-size:2.5em;">食趣商家管理平台</div>
+<div style="font-size:1em;margin-top:10px;">The boring business management platform </div>
+</div>
+ <div class="container">
+
+      <form class="form-signin" action="login" method="post">
+       <div class="user-circle" id="user-circle"><img src="./imgs/user-circle.png" ></div>
+       
+       <input type="text" required="required" name="phone" style="margin-top:20px;width:378px;" class="form-control floating-label" onfocus="divonfocus('user-circle')" onblur="divonblur('user-circle')" placeholder="用户名">
+
+        <div class="user-circle" id="unlock" style="padding-left:17px;" id="unlock"><img src="./imgs/unlock.png"></div>
+        <input type="password" required="required" name="password" style="margin-top:20px;width:378px;" class="form-control floating-label" onfocus="divonfocus('unlock')" onblur="divonblur('unlock')" placeholder="密码">
+       <div class="alert alert-danger" style="margin-bottom:0px;display:none" role="alert"></div>
+       <button class="btn btn-large  loginbtn"  type="submit">登陆</button>
+      </form>
+		<input type="hidden" id="err" value="${err }">
+    </div> <!-- /container -->
+</body>
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/common.js"></script>
+<script src="./js/login.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script>
+      $(function(){
+    	var err = $("#err").val();
+    	if(err!=''){
+    		if(err==1){
+    			$(".alert").text("用户名或密码错误！");
+    			$(".alert").show();
+    		}else if(err==2){
+    			$(".alert").text("请先登录！");
+    			$(".alert").show();
+    		}else if(err==3){
+    			$(".alert").text("该用户无权限登录！");
+    			$(".alert").show();
+    		}
+    	}
+      })
+</script>
+</html>

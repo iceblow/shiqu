@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<menu-list appname="食趣" iconURL="" authorityType="0">
+	<menu-item name="用户管理" iconURL="" authority="1" action="/userlist">
+		<!-- <sub-item name="用户管理" authority="2" action="/userlist" /> -->
+	</menu-item>
+</menu-list>

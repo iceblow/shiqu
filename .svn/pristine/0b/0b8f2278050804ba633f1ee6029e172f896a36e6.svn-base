@@ -1,0 +1,378 @@
+package com.daoshun.shiqu.controller.shop;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane.MoveAction;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.controller.ApiBaseController;
+import com.daoshun.shiqu.pojo.Coupon;
+import com.daoshun.shiqu.pojo.MyCoupon;
+import com.daoshun.shiqu.pojo.RechargeCard;
+import com.daoshun.shiqu.pojo.RechargeRecord;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.UserInfo;
+import com.daoshun.shiqu.service.CouponService;
+import com.daoshun.shiqu.service.StoreService;
+import com.daoshun.shiqu.service.UserService;
+
+@Controller
+@RequestMapping("/shop")
+public class CouponManage extends ApiBaseController{
+	
+	@Resource(name="couponService")
+	CouponService couponService;
+	
+	@Resource(name="userService")
+	UserService userService;
+	
+	@Resource(name = "storeService")
+	StoreService storeService;
+	
+	long pageCount;
+	
+	/**
+	 * 优惠券列表
+	 * @param pageIndex
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/couponManage")
+	public ModelAndView couponManage(Integer pageIndex, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		QueryResult<Coupon> result = couponService.getCouponListByPage(shopid, pageIndex, Constants.SHOPLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex>1){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/couponManage?pageIndex="+pageIndex);
+				return mov;
+			}
+		}
+		List<Coupon> couponlist = result.getDataList();
+		pageCount = (result.getTotal() + (Constants.SHOPLISTNUM - 1)) / Constants.SHOPLISTNUM;
+		mov.addObject("couponlist", couponlist);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("pageIndex", pageIndex);
+		mov.setViewName("shop/couponlist");
+		return mov;
+	}
+	
+	/**
+	 * 停用优惠券
+	 * @param coupon_id
+	 * @param response
+	 */
+	@RequestMapping("/changevalid")
+	public void changevalid(Long coupon_id, HttpServletResponse response){
+		Coupon coupon = couponService.getCouponById(coupon_id);
+		if(coupon == null){
+			CommonUtils.setResponseStr("error", response);
+			return;
+		}else{
+			coupon.setIs_valid(0);
+			couponService.updateCoupon(coupon);
+			CommonUtils.setResponseStr("success", response);
+		}
+	}
+	
+	/**
+	 * 编辑优惠券
+	 * @param coupon_id
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/editorCoupon")
+	public ModelAndView editorCoupon(Long coupon_id, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if(coupon_id != 0){
+			Coupon coupon = couponService.getCouponById(coupon_id);
+			if(coupon == null){
+				mov.setViewName("shop/500");
+				return mov;
+			}else{
+				mov.addObject("coupon", coupon);
+			}
+		}
+		mov.addObject("shopid", shopid);
+		mov.setViewName("shop/editorCoupon");
+		return mov;
+	}
+	
+	/**
+	 * 添加或保存优惠券
+	 * @param coupon
+	 * @param startTime
+	 * @param endtime
+	 * @return
+	 */
+	@RequestMapping("/saveorupdateCoupon")
+	public ModelAndView saveorupdateCoupon(Coupon coupon, String startTime, String endtime){
+		ModelAndView mov = new ModelAndView();
+		startTime = startTime+" 00:00:00";
+		endtime = endtime+" 23:59:59";
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+		Date from_time = null;
+		Date end_time = null;
+		try {
+			from_time = sdf.parse(startTime);
+			end_time = sdf.parse(endtime);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} 
+		if(coupon.getCoupon_id() == 0){
+			Coupon couponinfo = new Coupon();
+			couponinfo.setAmount(coupon.getAmount());
+			couponinfo.setDescription(coupon.getDescription());
+			couponinfo.setFrom_time(from_time);
+			couponinfo.setEnd_time(end_time);
+			couponinfo.setIs_valid(coupon.getIs_valid());
+			couponinfo.setLimit_num(coupon.getLimit_num());
+			couponinfo.setMin_money(coupon.getMin_money());
+			couponinfo.setStore_id(coupon.getStore_id());
+			couponService.addCoupon(couponinfo);
+		}else{
+			Coupon couponinfo = couponService.getCouponById(coupon.getCoupon_id());
+			couponinfo.setAmount(coupon.getAmount());
+			couponinfo.setDescription(coupon.getDescription());
+			couponinfo.setFrom_time(from_time);
+			couponinfo.setEnd_time(end_time);
+			couponinfo.setIs_valid(coupon.getIs_valid());
+			couponinfo.setLimit_num(coupon.getLimit_num());
+			couponinfo.setMin_money(coupon.getMin_money());
+			couponService.updateCoupon(couponinfo);
+		}
+		mov.setViewName("redirect:/shop/couponManage");
+		return mov;
+	}
+	
+	/**
+	 * 用户该优惠券的用户
+	 * @param pageIndex
+	 * @param coupon_id
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/couponuserlist")
+	public ModelAndView couponuserlist(Integer pageIndex, Long coupon_id, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<UserInfo> result = userService.getCouponUserlistByPage(coupon_id, pageIndex, Constants.SHOPLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/couponuserlist?pageIndex="+pageIndex);
+				return mov;
+			}
+		}
+		List<UserInfo> couponuserlist = result.getDataList();
+		pageCount = (result.getTotal() + (Constants.SHOPLISTNUM - 1)) / Constants.SHOPLISTNUM;
+		mov.addObject("couponuserlist", couponuserlist);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("pageIndex", pageIndex);
+		mov.setViewName("shop/couponuserlist");
+		return mov;
+	}
+	
+	/**
+	 * 跳转到发派优惠券页面
+	 * @param pageIndex
+	 * @param coupon_id
+	 * @param session
+	 * @param keyword
+	 * @return
+	 */
+	@RequestMapping("/distribute")
+	public ModelAndView distribute(Integer pageIndex, Long coupon_id, HttpSession session, String keyword){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		QueryResult<UserInfo> result = userService.getStoreUserlistByPage(shopid,coupon_id, keyword, pageIndex, Constants.SHOPLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/distribute?pageIndex="+pageIndex);
+				return mov;
+			}
+		}
+		List<UserInfo> userlist = result.getDataList();
+		pageCount = (result.getTotal() + (Constants.SHOPLISTNUM - 1)) / Constants.SHOPLISTNUM;
+		mov.addObject("userlist", userlist);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("coupon_id", coupon_id);
+		mov.setViewName("shop/distribute");
+		return mov;
+	}
+	
+	/**
+	 * 派发优惠券
+	 * @param user_id
+	 * @param coupon_id
+	 * @param response
+	 */
+	@RequestMapping("/paifaCoupon")
+	public void paifaCoupon(String user_id, Long coupon_id, HttpServletResponse response){
+		Coupon coupon = couponService.getCouponById(coupon_id);
+		String[] useridlist = user_id.split(",");
+		if(useridlist != null && useridlist.length > 0){
+			for (String idstr : useridlist) {
+				UserInfo userinfo = userService.getUserInfo(CommonUtils.parseLong(idstr, 0));
+				if(userinfo != null){
+					MyCoupon mycoupon = new MyCoupon();
+					mycoupon.setCoupon(coupon);
+					mycoupon.setCoupon_no(CommonUtils.makeRandomNo());
+					mycoupon.setIs_used(0);
+					mycoupon.setUser_id(userinfo.getUser_id());
+					couponService.addMyCoupon(mycoupon);
+				}
+			}
+		}
+		CommonUtils.setResponseStr("success", response);
+	}
+	
+	/**
+	 * 储值卡
+	 * @param pageIndex
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/cardsManage")
+	public ModelAndView cardsManage(Integer pageIndex, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		QueryResult<RechargeCard> result = couponService.getRechargeCardListByPage(shopid, pageIndex, Constants.SHOPLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/cardsManage?pageIndex="+pageIndex);
+				return mov;
+			}
+		}
+		List<RechargeCard> cardslist = result.getDataList();
+		pageCount = (result.getTotal() + (Constants.SHOPLISTNUM - 1)) / Constants.SHOPLISTNUM;
+		mov.addObject("cardslist", cardslist);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("pageIndex", pageIndex);
+		mov.setViewName("shop/cardlist");
+		return mov;
+	}
+	
+	@RequestMapping("/editorcard")
+	public ModelAndView editorcarda(Long id){
+		ModelAndView mov = new ModelAndView();
+		if(id != 0){
+			RechargeCard rechargeCard = couponService.getRechargeCard(id);
+			mov.addObject("rechargeCard", rechargeCard);
+			mov.addObject("cardno", rechargeCard.getCard_no());
+			mov.addObject("id", rechargeCard.getId());
+			mov.addObject("money", rechargeCard.getMoney());
+			mov.addObject("user_id", rechargeCard.getUser_id());
+		}else{
+			mov.addObject("cardno", CommonUtils.makeRandomNo());
+		}
+		mov.setViewName("shop/editorCard");
+		return mov;
+	}
+	
+	@RequestMapping("/selectStoreUser")
+	public ModelAndView selectStoreUser(HttpSession session, String id, String card_no, String money, String rechargemoney, String actmoney, String keyword){
+		ModelAndView mov = new ModelAndView();
+		session.setAttribute("rechargeCardId", id);
+		session.setAttribute("rechargeCardNo", card_no);
+		session.setAttribute("rechargeCardMoney", money);
+		session.setAttribute("rechargeMoney", rechargemoney);
+		session.setAttribute("actmoney", actmoney);
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		//取没有取过储值卡的用户
+		List<UserInfo> leaveuserlist = userService.getLeaveUserList(shopid, keyword);
+		mov.addObject("leaveuserlist", leaveuserlist);
+		mov.addObject("keyword", keyword);
+		mov.setViewName("shop/leaveUser");
+		return mov;
+	}
+	
+	@RequestMapping("/chooseUser")
+	public ModelAndView chooseUser(HttpSession session,Long user_id){
+		ModelAndView mov = new ModelAndView();
+		String rechargeCardId = String.valueOf(session.getAttribute("rechargeCardId"));
+		String rechargeCardNo = String.valueOf(session.getAttribute("rechargeCardNo"));
+		String rechargeCardMoney = String.valueOf(session.getAttribute("rechargeCardMoney"));
+		String rechargeMoney = String.valueOf(session.getAttribute("rechargeMoney"));
+		String actmoney = String.valueOf(session.getAttribute("actmoney"));
+		mov.addObject("cardno", rechargeCardNo);
+		mov.addObject("id", rechargeCardId);
+		mov.addObject("money", rechargeCardMoney);
+		mov.addObject("rechargemoney", rechargeMoney);
+		mov.addObject("actmoney", actmoney);
+		UserInfo userinfo = userService.getUserInfo(user_id);
+		if(!CommonUtils.isEmptyString(userinfo.getReal_name())){
+			mov.addObject("username", userinfo.getReal_name());
+		}else if(!CommonUtils.isEmptyString(userinfo.getNick_name())){
+			mov.addObject("username", userinfo.getNick_name());
+		}else{
+			mov.addObject("username", userinfo.getUser_name());
+		}
+		mov.addObject("user_id",user_id);
+		mov.setViewName("shop/editorCard");
+		return mov;
+	}
+	
+	@RequestMapping("/saveorupdateRecharge")
+	public ModelAndView saveorupdateRecharge(HttpSession session,RechargeCard rechargeCard, float rechargemoney, float actmoney){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		Store store = storeService.getStoreById(shopid);
+		if(rechargeCard.getId() == 0){
+			RechargeCard card = new RechargeCard();
+			card.setCard_no(rechargeCard.getCard_no());
+			card.setMoney(actmoney);
+			card.setStore(store);
+			card.setUser_id(rechargeCard.getUser_id());
+			couponService.addRechargeCard(card);
+			RechargeRecord record = new RechargeRecord();
+			record.setCard_id(card.getId());
+			record.setCharge_money(actmoney);
+			record.setMoney(rechargemoney);
+			record.setCharge_time(new Date());
+			record.setUser_id(rechargeCard.getUser_id());
+			couponService.addRechargeRecord(record);
+		}else{
+			RechargeCard card = couponService.getRechargeCard(rechargeCard.getId());
+			card.setMoney(card.getMoney()+actmoney);
+			couponService.updateRechargeCard(card);
+			RechargeRecord record = new RechargeRecord();
+			record.setCard_id(card.getId());
+			record.setCharge_money(actmoney);
+			record.setMoney(rechargemoney);
+			record.setCharge_time(new Date());
+			record.setUser_id(rechargeCard.getUser_id());
+			couponService.addRechargeRecord(record);
+		}
+		mov.setViewName("redirect:/shop/cardsManage");
+		return mov;
+	}
+}

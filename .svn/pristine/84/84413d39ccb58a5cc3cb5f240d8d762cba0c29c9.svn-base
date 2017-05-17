@@ -1,0 +1,84 @@
+package com.daoshun.shiqu.service.wap;
+
+import java.text.SimpleDateFormat;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Order;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.service.BaseService;
+
+@Service("wapOrderService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class WapOrderService  extends BaseService{
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<Order> getPresentOrderListBypage(long user_id, Integer pageIndex, int pageSize) {
+		SimpleDateFormat time=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+		String hql = " from Order where user_id = :user_id and (state = 1 or state = 2)";
+		List<Order> list = (List<Order>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, new String[]{"user_id"}, user_id);
+		if(list != null && list.size() > 0){
+			for (Order order : list) {
+				if(order.getStore_id() != 0){
+					Store store = dataDao.getObjectById(Store.class, order.getStore_id());
+					if(store != null){
+						order.setStore(store);
+					}
+				}
+				if(order.getCheck_time() != null){
+					order.setStr_Check_time(time.format(order.getCheck_time()));
+				}
+				if(order.getOrder_time() != null){
+					order.setStr_Order_time(time.format(order.getOrder_time()));
+				}
+			}
+		}
+		String counthql = "select count(*) "+hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, new String[]{"user_id"}, user_id);
+		QueryResult<Order> result = new QueryResult<Order>(list, total);
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<Order> getIsOutOrderListBypage(long user_id, Integer pageIndex, int is_out, int pageSize) {
+		SimpleDateFormat time=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+		String hql = " from Order where user_id = :user_id and is_out = :is_out and (state = 3 or state = 4 or state = 5)";
+		List<Order> list = (List<Order>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, new String[]{"user_id","is_out"}, user_id, is_out);
+		if(list != null && list.size() > 0){
+			for (Order order : list) {
+				if(order.getStore_id() != 0){
+					Store store = dataDao.getObjectById(Store.class, order.getStore_id());
+					if(store != null){
+						order.setStore(store);
+					}
+				}
+				if(order.getCheck_time() != null){
+					order.setStr_Check_time(time.format(order.getCheck_time()));
+				}
+				if(order.getOrder_time() != null){
+					order.setStr_Order_time(time.format(order.getOrder_time()));
+				}
+			}
+		}
+		String counthql = "select count(*) "+hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, new String[]{"user_id","is_out"}, user_id, is_out);
+		QueryResult<Order> result = new QueryResult<Order>(list, total);
+		return result;
+	}
+
+	public Order getOrderDetail(Long order_id) {
+		Order order = dataDao.getObjectById(Order.class, order_id);
+		if (order != null) {
+			order.setStore(dataDao.getObjectById(Store.class, order.getStore_id()));
+			if (order.getTable_id() != 0) {
+				order.setTable_no(String.valueOf(dataDao.getFirstObjectViaParam("select table_no from StoreTable where table_id = " + order.getTable_id(), null)));
+			}
+		}
+		return order;
+	}
+
+}

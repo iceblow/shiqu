@@ -1,0 +1,132 @@
+.shaigainame{
+	float:left;
+	width:80px;
+	text-align:right;
+	font-weight:bold;
+}
+
+.shaigai{
+	float:left;
+	width:75%;
+	display:block;
+	word-wrap: break-word;
+	word-break: break-all;
+}
+
+.detail_right{
+	float:left;
+	width:25%;
+	border:solid 1px #e5e6ea;
+}
+
+.detail_left{
+	position: relative;
+	float:left;
+	width:66%;
+	margin-left:3%;
+	margin-right:3%;
+	padding-bottom:30px;
+	border-top:solid 1px #e5e6ea;
+}
+
+.detail_edit{
+	position: absolute;
+	right:0;
+	width:100px;
+	height:40px;
+	top:25px;
+	background-color:#6097fb;
+	border:none;
+}
+
+.detail_upload{
+	position: absolute;
+	width:100px;
+	height:40px;
+	background-color:#6097fb;
+	border:none;
+	border-radius:0px;
+}
+
+.detail_location{
+	width:100px;
+	height:40px;
+	background-color:#6097fb;
+	border:none;
+	border-radius:0px;
+	background-image: url('../imgs/location.png');
+	background-repeat: no-repeat;
+    background-position: 5px;
+}
+
+.detail_right_nav_top{
+	font-weight:bold;
+	padding-left:5%;
+	line-height:60px;
+	height:60px;
+	border-bottom:solid 1px #e5e6ea;
+}
+
+.detail_right_nav{
+	margin-left:5%;
+	line-height:60px;
+	height:60px;
+	border-bottom:solid 1px #e5e6ea;
+}
+
+.img_addbtn{
+	border-radius:0px;
+	width:100px;
+	height:40px;
+	margin-top:30px;
+}
+
+.category{
+	background-color: #ffffff;
+    background-image: none !important;
+    filter: none !important;
+    border: 1px solid #e5e5e5;
+    outline: none;
+    width: 134px !important;
+    line-height: 30px;
+    height: 34px !important;
+    margin-top: 20px;
+}
+
+.time_select{
+    padding-left: 2%;
+    height: 36px;
+    border: 1px solid #e0e0e0;
+    line-height:36px;
+}
+
+.intro{
+	width:800px;
+	height:76px;
+}
+
+.form-control{
+	border-radius:0px;
+}
+
+.alert{
+	background: #fff;
+ 	position: fixed; 
+ 	padding: 0px;
+ 	border-radius: 0px;
+ 	    top: 0px;
+    z-index: 10;
+    left:20px;
+}
+
+/* .l-map{ */
+/* 	height:330px; */
+/* 	width:900px; */
+/* 	border: 1px solid #e8e8e8; */
+/* 	margin: 10px; */
+/* } */
+
+label{
+	max-width:none;
+	border-color: #000000;
+}

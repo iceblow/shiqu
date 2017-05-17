@@ -1,0 +1,8 @@
+
+function divonfocus(id){
+	$("#"+id).css("background-color","#6097fb");
+}
+
+function divonblur(id){
+	$("#"+id).css("background-color","#bec5d7");
+}

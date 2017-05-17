@@ -1,0 +1,62 @@
+package com.daoshun.shiqu.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreUser;
+
+/**
+ * @author wangcl
+ *
+ */
+@Service("storeUserService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class StoreUserService extends BaseService  {
+
+	public StoreUser getStoreUserByPhone(String phone)  {
+		StoreUser storeUser = (StoreUser) dataDao.getFirstObjectViaParam("from StoreUser where phone = :phone ", new String[] { "phone" }, phone);
+		return storeUser;
+	}
+	
+	public Store getStoreById(long store_id){
+		Store store = dataDao.getObjectById(Store.class, store_id);
+		return store;
+	}
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<StoreUser> getStoreUserListByStorePage(long store_id, Integer pageIndex, int pageSize) {
+		String hql = "from StoreUser where store_id = :store_id";
+		String[] params = new String[]{"store_id"};
+		List<StoreUser> list = (List<StoreUser>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, params, store_id);
+		String counthql = "select count(*) "+hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, params, store_id);
+		QueryResult<StoreUser> result = new QueryResult<StoreUser>(list, total); 
+		return result;
+	}
+
+	public StoreUser getStoreUserById(Long id) {
+		StoreUser info = dataDao.getObjectById(StoreUser.class, id);
+		return info;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addStoreUser(StoreUser user) {
+		dataDao.addObject(user);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void updateStoreUser(StoreUser user) {
+		dataDao.updateObject(user);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void delStoreUser(StoreUser user) {
+		dataDao.deleteObject(user);
+	}
+	
+}

@@ -1,0 +1,79 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/shop.css" rel="stylesheet">
+<title>店铺信息</title>
+</head>
+<body>
+<div style="width:100%;height:60px;"></div>
+
+<div class="detail_left">
+<button type="button" class="btn btn-primary detail_edit"  aria-haspopup="true" aria-expanded="false" onclick="shopdetail()">编辑资料</button>
+<p style="padding-top:30px;clear:both;">
+<span class="shaigainame">店铺名称：</span>
+<span class="shaigai">${store.store_name }</span>
+</p>
+
+<p style="padding-top:25px;clear:both;">
+<span class="shaigainame">所属分类：</span>
+<span class="shaigai">${store.category_name }</span>
+</p>
+
+<p style="padding-top:25px;clear:both;">
+<span class="shaigainame">开店时间：</span>
+<span class="shaigai">${store.open_time }~${store.close_time }</span>
+</p>
+
+<p style="padding-top:25px;clear:both;">
+<span class="shaigainame">说明：</span>
+<span class="shaigai">${store.intro }</span>
+</p>
+
+<p style="padding-top:25px;clear:both;">
+<span class="shaigainame">电话：</span>
+<span class="shaigai">${store.phone }</span>
+</p>
+
+<p style="padding-top:25px;clear:both;">
+<span class="shaigainame">地址：</span>
+<span class="shaigai">${store.address }</span>
+</p>
+
+<div style="clear:both;border-top:solid 1px #e5e6ea;margin-top:50px;padding-top:60px;">
+<div style="width:270px;height:270px;float:left;position:relative;margin-right:30px;">
+<img src="${store.pic_url }" width=270px height=270px>
+</div>
+<c:forEach items="${store.storepic_list}" var="p" varStatus="status">  
+<div style="width:200px;height:270px;float:left;position:relative;">
+<img src="${p.img_url}" width=190px height=190px style=" position: absolute;bottom: 0;left: 0px;">
+</div>
+</c:forEach>
+</div>
+<div style="clear:both;height:120px;"></div>
+</div>
+<div class="detail_right">
+<div class="detail_right_nav_top" >
+今日数据
+</div>
+<div class="detail_right_nav " >
+总销售额(元) <font style="float:right;color:#5f97fa">${daily.total_sell }</font>
+</div>
+<div class="detail_right_nav " >
+顾客数 <font style="float:right;color:#5f97fa">${daily.total_customers }</font>
+</div>
+<div class="detail_right_nav " >
+下单数<font style="float:right;color:#5f97fa">${daily.total_order }</font>
+</div>
+</div>
+</body>
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script src="./js/shop.js"></script>
+</html>

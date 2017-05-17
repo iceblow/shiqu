@@ -1,0 +1,473 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.service;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.exception.CustomException;
+import com.daoshun.exception.NullParameterException;
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Coupon;
+import com.daoshun.shiqu.pojo.DeliveryAddress;
+import com.daoshun.shiqu.pojo.Feedback;
+import com.daoshun.shiqu.pojo.MessageInfo;
+import com.daoshun.shiqu.pojo.MyCoupon;
+import com.daoshun.shiqu.pojo.PushInfo;
+import com.daoshun.shiqu.pojo.RechargeCard;
+import com.daoshun.shiqu.pojo.RechargeRecord;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.UserInfo;
+import com.daoshun.shiqu.pojo.VerifyCode;
+
+/**
+ * @author qiuch
+ * 
+ */
+@Service("userService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class UserService extends BaseService {
+
+	public UserInfo login(String account, String password) throws CustomException {
+		String hql = "from UserInfo where user_name = :name or phone = :phone";
+		UserInfo userInfo = (UserInfo) dataDao.getFirstObjectViaParam(hql, new String[] { "name", "phone" }, account, account);
+		if (userInfo == null) {
+			throw new CustomException(Constants.USER_NAME_EXCEPTION);
+		}
+		if (!userInfo.getPassword().equals(password)) {
+			throw new CustomException(Constants.USER_PWD_EXCEPTION);
+		}
+		userInfo.setAvatar_url(getFilePathById(userInfo.getAvatar()));
+		userInfo.setIs_receive(CommonUtils.parseInt(String.valueOf(dataDao.getFirstObjectViaParam("select is_receive from PushInfo where user_id = " + userInfo.getUser_id(), null)), 0));
+		return userInfo;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public UserInfo register(String user_name, String password, String phone, String real_name, String vcode) throws CustomException {
+		String hql = "from UserInfo where user_name = :name or phone = :phone";
+		UserInfo userInfo = (UserInfo) dataDao.getFirstObjectViaParam(hql, new String[] { "name", "phone" }, user_name, phone);
+		if (userInfo != null) {
+			throw new CustomException(Constants.USER_EXIST_EXCEPTION);
+		}
+		hql = "select count(id) from VerifyCode where vcode = ? and phone = ? and timestampdiff(minute ,request_time,now()) < 10";
+		if (dataDao.getCount(hql, vcode, phone) == 0) {
+			throw new CustomException(Constants.VCODE_ERR_EXCEPTION);
+		}
+		userInfo = new UserInfo();
+		userInfo.setUser_name(user_name);
+		userInfo.setPassword(password);
+		userInfo.setPhone(phone);
+		userInfo.setReal_name(real_name);
+		userInfo.setCreate_time(new Date());
+		dataDao.addObject(userInfo);
+		return userInfo;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public HashMap<String, Object> thirdPartLogin(int type, String openid) throws CustomException {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		String hql = "";
+		if (type == 1) {
+			hql = "from UserInfo where qq_openid = :openid";
+		}
+		if (type == 2) {
+			hql = "from UserInfo where weixin_openid = :openid";
+		}
+		UserInfo userInfo = (UserInfo) dataDao.getFirstObjectViaParam(hql, new String[] { "openid" }, openid);
+		if (userInfo != null) {
+			userInfo.setAvatar_url(getFilePathById(userInfo.getAvatar()));
+			userInfo.setIs_receive(CommonUtils.parseInt(String.valueOf(dataDao.getFirstObjectViaParam("select is_receive from PushInfo where user_id = " + userInfo.getUser_id(), null)), 0));
+			result.put("isfirst", 0);
+		} else {
+			Date now = new Date();
+			userInfo = new UserInfo();
+			// userInfo.setUser_name("");
+			// userInfo.setPassword("");
+			// userInfo.setPhone("");
+			// userInfo.setReal_name("");
+			char[] nick = CommonUtils.getTimeFormat(now, "HHmmssyyyyMMdd").toCharArray();
+			StringBuffer nickBuffer = new StringBuffer();
+			for (int i = 0; i < nick.length; i++) {
+				if (i % 2 == 0) {
+					nickBuffer.append(new Random().nextInt(10));
+				}
+				nickBuffer.append(nick[i]);
+			}
+			if (type == 1) {
+				userInfo.setNick_name("QQ用户" + nickBuffer.toString());
+			} else {
+				userInfo.setNick_name("微信用户" + nickBuffer.toString());
+			}
+			userInfo.setCreate_time(now);
+			dataDao.addObject(userInfo);
+			result.put("isfirst", 1);
+			userInfo.setIs_receive(0);
+		}
+		result.put("user", userInfo);
+		return result;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public String getVcode(int type, String phone) throws CustomException {
+		String hql, vcode = "";
+		if (type == 1) {
+			hql = "select count(id) from UserInfo where phone =?";
+			if (dataDao.getCount(hql, phone) > 0) {
+				throw new CustomException(Constants.PHONE_EXIST_EXCEPTION);
+			}
+		}
+		hql = "select count(id) from VerifyCode where phone =? and timestampdiff(second ,request_time,now()) < 60 ";
+		if (dataDao.getCount(hql, phone) > 0) {
+			throw new CustomException(Constants.VCODE_REQ_EXCEPTION);
+		}
+		vcode = String.valueOf(new Random().nextInt(9000) + 1000);
+		VerifyCode verifyCode = new VerifyCode();
+		verifyCode.setPhone(phone);
+		verifyCode.setVcode(vcode);
+		verifyCode.setRequest_time(new Date());
+		dataDao.addObject(verifyCode);
+		return vcode;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public UserInfo editUser(long user_id, String nick_name, String password, String phone, String real_name, long file_id, String birthday, String gender) throws CustomException {
+		UserInfo userInfo = (UserInfo) dataDao.getObjectById(UserInfo.class, user_id);
+		if (userInfo == null) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		if (!CommonUtils.isEmptyString(nick_name)) {
+			userInfo.setNick_name(nick_name);
+		}
+		if (!CommonUtils.isEmptyString(password)) {
+			userInfo.setPassword(password);
+		}
+		if (!CommonUtils.isEmptyString(phone)) {
+			userInfo.setPhone(phone);
+		}
+		if (!CommonUtils.isEmptyString(real_name)) {
+			userInfo.setReal_name(real_name);
+		}
+		if (file_id != 0) {
+			userInfo.setAvatar(file_id);
+		}
+		if (!CommonUtils.isEmptyString(birthday)) {
+			userInfo.setBirthday(CommonUtils.getDateFormat(birthday, "yyyy-MM-dd"));
+		}
+		if (!CommonUtils.isEmptyString(gender)) {
+			userInfo.setGender(gender);
+		}
+		dataDao.updateObject(userInfo);
+		userInfo.setAvatar_url(getFilePathById(userInfo.getAvatar()));
+		return userInfo;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public UserInfo changePassword(long user_id, String old_pwd, String new_pwd) throws CustomException {
+		UserInfo userInfo = (UserInfo) dataDao.getObjectById(UserInfo.class, user_id);
+		if (userInfo == null) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		if (!userInfo.getPassword().equals(old_pwd)) {
+			throw new CustomException(Constants.USER_OLD_PWD_EXCEPTION);
+		}
+		userInfo.setPassword(new_pwd);
+		dataDao.updateObject(userInfo);
+		return userInfo;
+	}
+
+	public List<RechargeCard> getMyCards(long user_id) throws CustomException {
+		if (user_id <= 0) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		String hql = "from RechargeCard where user_id = " + user_id;
+		List<RechargeCard> rechargeCards = (List<RechargeCard>) dataDao.getObjectsViaParam(hql, null);
+		for (RechargeCard rechargeCard : rechargeCards) {
+			rechargeCard.getStore().setPic_url(getFilePathById(rechargeCard.getStore().getPic()));
+		}
+		return rechargeCards;
+	}
+
+	public List<MyCoupon> getMyCoupon(long user_id) throws CustomException {
+		if (user_id <= 0) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		String hql = "from MyCoupon where user_id = " + user_id;
+		List<MyCoupon> myCoupons = (List<MyCoupon>) dataDao.getObjectsViaParam(hql, null);
+		for (MyCoupon myCoupon : myCoupons) {
+			Store s = dataDao.getObjectById(Store.class, myCoupon.getCoupon().getStore_id());
+			myCoupon.setStore_name(s.getStore_name());
+			myCoupon.setStore_pic(getFilePathById(s.getPic()));
+		}
+		return myCoupons;
+	}
+
+	public List<Store> getMyCollection(long user_id) throws CustomException {
+		if (user_id <= 0) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		String hql = "from Store where store_id in ( select collection_id from Collection where type = 1 and user_id = " + user_id + "  ) ";
+		List<Store> stores = (List<Store>) dataDao.getObjectsViaParam(hql, null);
+		for (Store store : stores) {
+			store.setPic_url(getFilePathById(store.getPic()));
+		}
+		return stores;
+	}
+
+	public HashMap<String, Object> getMyOrder(long user_id) throws CustomException {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		if (user_id <= 0) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		Double total = (Double) dataDao.getFirstObjectViaParam("select sum(total_price) from Order where state >2 and is_shop_order = 0 and  user_id = " + user_id, null);
+		Double used = (Double) dataDao.getFirstObjectViaParam("select sum(price) from Order where state >2 and is_shop_order = 0  and user_id = " + user_id, null);
+		total = total == null ? 0.0d : total;
+		used = used == null ? 0.0d : used;
+		result.put("total", total);
+		result.put("save", total - used);
+		return result;
+	}
+
+	public List<DeliveryAddress> getMyAddress(long user_id) throws CustomException {
+		if (user_id <= 0) {
+			throw new CustomException(Constants.USER_ERR_EXCEPTION);
+		}
+		String hql = "from DeliveryAddress where user_id  = " + user_id;
+		List<DeliveryAddress> addresses = (List<DeliveryAddress>) dataDao.getObjectsViaParam(hql, null);
+		return addresses;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void delAddress(long addr_id) throws CustomException {
+		DeliveryAddress deliveryAddress = dataDao.getObjectById(DeliveryAddress.class, addr_id);
+		if (deliveryAddress.getIs_default() == 1) {
+			DeliveryAddress deliveryAddress2 = (DeliveryAddress) dataDao.getFirstObjectViaParam("from DeliveryAddress where is_default = 0 and user_id = " + deliveryAddress.getUser_id(), null);
+			if (deliveryAddress2 != null) {
+				deliveryAddress2.setIs_default(1);
+				dataDao.updateObject(deliveryAddress2);
+			}
+		}
+
+		dataDao.deleteObject(deliveryAddress);
+
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void editAddress(long addr_id, long user_id, String receiver, String address, String phone, String province, String city, String area, int is_default) throws CustomException {
+		DeliveryAddress deliveryAddress = dataDao.getObjectById(DeliveryAddress.class, addr_id);
+		if (deliveryAddress == null) {
+			if (user_id <= 0) {
+				throw new NullParameterException();
+			}
+			CommonUtils.validateEmpty(receiver);
+			CommonUtils.validateEmpty(address);
+			CommonUtils.validateEmpty(phone);
+			CommonUtils.validateEmpty(province);
+			CommonUtils.validateEmpty(city);
+			CommonUtils.validateEmpty(area);
+			deliveryAddress = new DeliveryAddress();
+			deliveryAddress.setAddress(address);
+			deliveryAddress.setArea(area);
+			deliveryAddress.setCity(city);
+			deliveryAddress.setPhone(phone);
+			deliveryAddress.setProvince(province);
+			deliveryAddress.setReceiver(receiver);
+			deliveryAddress.setUpdate_time(new Date());
+			deliveryAddress.setUser_id(user_id);
+			if (is_default == 1) {
+				String hql = "from DeliveryAddress where user_id = " + user_id + " and is_default = 1";
+				DeliveryAddress oldDefault = (DeliveryAddress) dataDao.getFirstObjectViaParam(hql, null);
+				if (oldDefault != null) {
+					oldDefault.setIs_default(0);
+					dataDao.updateObject(oldDefault);
+				}
+				deliveryAddress.setIs_default(1);
+			} else {
+				if (dataDao.getCount("select count(id) from DeliveryAddress where user_id =" + user_id) == 0) {
+					deliveryAddress.setIs_default(1);
+				} else {
+					deliveryAddress.setIs_default(0);
+				}
+			}
+			dataDao.addObject(deliveryAddress);
+		} else {
+			if (!CommonUtils.isEmptyString(receiver)) {
+				deliveryAddress.setReceiver(receiver);
+			}
+			if (!CommonUtils.isEmptyString(address)) {
+				deliveryAddress.setAddress(address);
+			}
+			if (!CommonUtils.isEmptyString(phone)) {
+				deliveryAddress.setPhone(phone);
+			}
+			if (!CommonUtils.isEmptyString(province)) {
+				deliveryAddress.setProvince(province);
+			}
+			if (!CommonUtils.isEmptyString(city)) {
+				deliveryAddress.setCity(city);
+			}
+			if (!CommonUtils.isEmptyString(area)) {
+				deliveryAddress.setArea(area);
+			}
+			if (is_default == 1) {
+				String hql = "from DeliveryAddress where user_id = " + user_id + " and is_default = 1";
+				DeliveryAddress oldDefault = (DeliveryAddress) dataDao.getFirstObjectViaParam(hql, null);
+				if (oldDefault != null) {
+					oldDefault.setIs_default(0);
+					dataDao.updateObject(oldDefault);
+				}
+				deliveryAddress.setIs_default(1);
+			} else {
+				deliveryAddress.setIs_default(0);
+			}
+			dataDao.updateObject(deliveryAddress);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<UserInfo> getCouponUserlistByPage(long coupon_id, Integer pageIndex, int pageSize) {
+		String hql = " from UserInfo where user_id in(select distinct user_id from MyCoupon where coupon.coupon_id = :coupon_id and is_used = 1 order by use_time desc )";
+		List<UserInfo> list = (List<UserInfo>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, new String[] { "coupon_id" }, coupon_id);
+		if (list != null && list.size() > 0) {
+			for (UserInfo userInfo : list) {
+				String MyCouponhql = "from MyCoupon where coupon.coupon_id = :coupon_id and user_id = :user_id and is_used = 1 order by use_time desc";
+				long couponcount = (long) dataDao.getFirstObjectViaParam("select count(*) " + MyCouponhql, new String[] { "coupon_id", "user_id" }, coupon_id, userInfo.getUser_id());
+				Coupon coupon = dataDao.getObjectById(Coupon.class, coupon_id);
+				float allAmount = couponcount * coupon.getAmount();
+				userInfo.setAllAmount((float) allAmount);
+				List<MyCoupon> myCouponlist = (List<MyCoupon>) dataDao.getObjectsViaParam(MyCouponhql, new String[] { "coupon_id", "user_id" }, coupon_id, userInfo.getUser_id());
+				if (myCouponlist != null && myCouponlist.size() > 0) {
+					for (MyCoupon myCoupon : myCouponlist) {
+						userInfo.setUse_time(myCoupon.getUse_time());
+					}
+				}
+			}
+		}
+		String counthql = " select count(*) " + hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, new String[] { "coupon_id" }, coupon_id);
+		QueryResult<UserInfo> result = new QueryResult<UserInfo>(list, (int) total);
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<UserInfo> getStoreUserlistByPage(long collection_id, long coupon_id, String keyword, Integer pageIndex, int pageSize) {
+		String hql = " from UserInfo where user_id in(select user_id from Collection where type=1 and collection_id = :collection_id) and user_id not in(select user_id from MyCoupon where is_used = 0 and coupon.coupon_id = :coupon_id)";
+		if (!CommonUtils.isEmptyString(keyword)) {
+			hql += " and (user_name like '%" + keyword + "%' or real_name like '%" + keyword + "%' or nick_name like '%" + keyword + "%' or phone like '%" + keyword + "%')";
+		}
+		String[] params = new String[] { "collection_id", "coupon_id" };
+		List<UserInfo> list = (List<UserInfo>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, params, collection_id, coupon_id);
+		String counthql = "select count(*) " + hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, params, collection_id, coupon_id);
+		QueryResult<UserInfo> result = new QueryResult<UserInfo>(list, (int) total);
+		return result;
+	}
+
+	public UserInfo getUserInfo(long user_id) {
+		UserInfo info = dataDao.getObjectById(UserInfo.class, user_id);
+		return info;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<UserInfo> getLeaveUserList(long collection_id, String keyword) {
+		String hql = "from UserInfo where user_id in(select user_id from Collection  where type=1 and collection_id = :collection_id) and user_id not in(select user_id from RechargeCard where store.store_id = :store_id)";
+		if (!CommonUtils.isEmptyString(keyword)) {
+			hql += " and (user_name like '%" + keyword + "%' or real_name like '%" + keyword + "%' or nick_name like '%" + keyword + "%' or phone like '%" + keyword + "%')";
+		}
+		String[] params = new String[] { "collection_id", "store_id" };
+		List<UserInfo> list = (List<UserInfo>) dataDao.getObjectsViaParam(hql, params, collection_id, collection_id);
+		return list;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void feedback(String info, String content, String version, long user_id) {
+		Feedback feedback = new Feedback();
+		feedback.setInfo(info);
+		feedback.setContent(content);
+		feedback.setUser_id(user_id);
+		feedback.setVersion(version);
+		feedback.setTime(new Date());
+		dataDao.addObject(feedback);
+	}
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<UserInfo> getUserListByStorePage(int type, long collection_id, String keyword, Integer pageIndex, int pageSize) {
+		String hql = " from UserInfo where user_id in(select user_id from Collection where type = :type and collection_id = :collection_id)";
+		if (!CommonUtils.isEmptyString(keyword)) {
+			hql += " and (user_name like '%" + keyword + "%' or real_name like '%" + keyword + "%' or nick_name like '%" + keyword + "%' or phone like '%" + keyword + "%')";
+		}
+		String[] params = new String[] { "type", "collection_id" };
+		List<UserInfo> list = (List<UserInfo>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, params, type, collection_id);
+		if (list != null && list.size() > 0) {
+			for (UserInfo userInfo : list) {
+				if (userInfo.getAvatar() != 0) {
+					userInfo.setAvatar_url(getFilePathById(userInfo.getAvatar()));
+				}
+			}
+		}
+		String counthql = " select count(*) " + hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, params, type, collection_id);
+		QueryResult<UserInfo> result = new QueryResult<UserInfo>(list, total);
+		return result;
+	}
+
+	public PushInfo getPushInfoByUser(long user_id) {
+		String hql = " from PushInfo where user_id = :user_id";
+		String[] params = new String[] { "user_id" };
+		PushInfo info = (PushInfo) dataDao.getFirstObjectViaParam(hql, params, user_id);
+		return info;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addMessageInfo(MessageInfo messageinfo) {
+		dataDao.addObject(messageinfo);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void updatePushInfo(long user_id, String client_id, int is_receive, int device_type) {
+		PushInfo pushInfo = (PushInfo) dataDao.getFirstObjectViaParam("from PushInfo where user_id = " + user_id, null);
+		if (pushInfo == null) {
+			pushInfo = new PushInfo();
+			pushInfo.setClient_id(client_id);
+			pushInfo.setIs_receive(is_receive);
+			pushInfo.setDevice_type(device_type);
+			pushInfo.setUser_id(user_id);
+			dataDao.addObject(pushInfo);
+		} else {
+			pushInfo.setClient_id(client_id);
+			pushInfo.setIs_receive(is_receive);
+			pushInfo.setDevice_type(device_type);
+			dataDao.updateObject(pushInfo);
+		}
+	}
+
+	public List<RechargeRecord> getRecord(long user_id, long card_id) {
+		String hql = "from RechargeRecord where user_id = " + user_id + " and card_id = " + card_id + " order by charge_time desc";
+		return (List<RechargeRecord>) dataDao.getObjectsViaParam(hql, null);
+	}
+
+	public List<Store> getMsg(long user_id, long store_id) {
+		String hql = "from Store where store_id in (select store_id from MessageInfo where find_in_set('" + user_id + "', user_ids ) > 0 ) ";
+		String hqlmsg = "from MessageInfo where store_id = " + store_id + " and find_in_set('" + user_id + "', user_ids ) > 0 ";
+		List<Store> stores = (List<Store>) dataDao.getObjectsViaParam(hql, null);
+		for (Store store : stores) {
+			store.setPic_url(getFilePathById(store.getPic()));
+			store.setMessage_list((List<MessageInfo>) dataDao.getObjectsViaParam(hqlmsg, null));
+		}
+		return stores;
+	}
+
+	public List<MessageInfo> getMsgDetail(long store_id, long user_id) {
+		String hql = "from MessageInfo where store_id = " + store_id + " and find_in_set('" + user_id + "', user_ids ) > 0 ";
+		List<MessageInfo> messageInfos = (List<MessageInfo>) dataDao.getObjectsViaParam(hql, null);
+		return messageInfos;
+	}
+}

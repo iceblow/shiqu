@@ -1,0 +1,74 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/table.css" rel="stylesheet">
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script src="./js/common.js"></script>
+<title>桌台桌号管理</title>
+</head>
+<body>
+	<div style="width: 94%;margin-left:3%; height: 83px; ">
+		<div style="width: 100%; height: 38px;"></div>
+		<div style="float: left; background-image: url(imgs/hicon.png); background-repeat: no-repeat;height: 17px;width: 11px;"></div>
+		<span style="float:left; font-size: 12px;">&nbsp;桌台桌号管理&nbsp;&nbsp;&gt;&nbsp;&nbsp;<font style="color: #5f97fa;">桌台桌号编辑</font></span>
+	</div>
+	<form action="./savetable" method="post">
+	<div style="width:94%;margin-left:3%;margin-top:40px;margin-bottom:30px;border-top:solid 1px #e5e6ea;">
+	<c:if test="${not empty storetable }"><input type="hidden" name="table_id" value="${storetable.table_id }"></c:if> 
+	<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">桌号</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+			<input type="text" class="form-control" name="table_no" id="table_no" value="${storetable.table_no }" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+	</div>
+	</div>
+	<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">区域</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+		<select style="float:right;margin-right:20px;" class="category" id="area_id" name="area_id">
+		<c:forEach items="${arealist}" var="p" varStatus="status">  
+		<c:if test="${storetable.area_id==p.id }">
+		<option value="${p.id }" selected="selected">${p.area_name }</option>
+		</c:if>
+		<c:if test="${storetable.area_id!=p.id }">
+		<option value="${p.id }" >${p.area_name }</option>
+		</c:if>
+		</c:forEach>
+		</select>
+	</div>
+	</div>
+	<div style="width: 100%; height: 75px; border-bottom: 1px solid #eaeff2;">
+	<div style="font-size:12px;font-weight:bold;float:left; width: 110px; height: 100%; line-height: 75px;padding-right:30px; border-right: 1px solid #eaeff2;text-align: right;">人数</div>
+	<div style="height: 100%; line-height: 75px; float:left; margin-left: 20px;">
+			<input type="text" class="form-control" name="num" id="num" onkeyup="return checkNum(event,'num')"  onkeyup="return checkNum(event,'num')"  value="${storetable.num }" required="required" style="width: 400px; height: 33px; padding-left:5px; margin-top: 20px;">
+	</div>
+	</div>
+	
+	<button type="submit" onclick="return checkInput()" class="btn btn-primary detail_submit" style="margin-right:130px;width:180px;margin-top:60px;background-image: none;" aria-haspopup="true" aria-expanded="false" >保存</button>
+	
+	
+	</div>
+	</form>
+</body>
+<script>
+function checkInput(){
+	var table_no = $("#table_no").val();
+	if(table_no==''){
+		alert("请输入桌号!");
+		$("#table_no").focus();
+		return false;
+	}
+	var num = $("#num").val();
+	if(num == ''){
+		alert("请输入人数!");
+		$("#num").focus();
+		return false;
+	}
+}
+</script>
+</html>

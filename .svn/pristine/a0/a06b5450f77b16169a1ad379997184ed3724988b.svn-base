@@ -1,0 +1,212 @@
+package com.daoshun.shiqu.controller.admin;
+
+import java.util.HashMap;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.Advert;
+import com.daoshun.shiqu.pojo.Feedback;
+import com.daoshun.shiqu.pojo.ManageUser;
+import com.daoshun.shiqu.service.manage.MaCommonService;
+
+@Controller
+public class ManageCommonController extends ManageBaseController {
+
+	@Resource(name = "maCommonService")
+	private MaCommonService maCommonService;
+
+	@RequestMapping("/login")
+	public ModelAndView index(String name, String password, HttpSession session, Integer issession) {
+		ModelAndView mov = new ModelAndView();
+		if (issession != null && issession == 1) {
+			mov.addObject("err", "长时间未操作，请重新登录");
+			mov.setViewName("/manage/login");
+		} else {
+			ManageUser mUser = maCommonService.login(name);
+			if (mUser == null) {
+				mov.addObject("err", "用户名有误");
+				mov.setViewName("/manage/login");
+			} else if (!mUser.getPassword().equals(CommonUtils.MD5(password))) {
+				mov.addObject("err", "密码有误");
+				mov.setViewName("/manage/login");
+			} else {
+				session.setAttribute(Constants.SESSION_MANAGE_ID, mUser.getId());
+				session.setAttribute(Constants.SESSION_MANAGE_PRIVILEGE, mUser.getPrivilege());
+				mov.setViewName("redirect:/manage/shoplist");
+			}
+		}
+		return mov;
+	}
+
+	/**
+	 * 
+	 * 添加后台管理员
+	 * 
+	 * @param name
+	 * @param password
+	 * @param privilege
+	 * @return
+	 */
+	@RequestMapping("/adminlist")
+	public ModelAndView adminlist() {
+		ModelAndView mov = new ModelAndView();
+		mov.setViewName("/manage/adminmanage");
+		return mov;
+	}
+
+	/**
+	 * 
+	 * 添加后台管理员
+	 * 
+	 * @param name
+	 * @param password
+	 * @param privilege
+	 * @return
+	 */
+	@RequestMapping("/addadmin")
+	public ModelAndView addAdmin(String name, String password, int privilege) {
+		ModelAndView mov = new ModelAndView();
+		mov.setViewName("redirect:/manage/shopmanage");
+		return mov;
+	}
+
+	/**
+	 * 编辑管理员信息（密码、权限）
+	 * 
+	 * @param adminId
+	 * @param password
+	 * @param privilege
+	 * @return
+	 */
+	@RequestMapping("/editadmin")
+	public ModelAndView changePwd(long adminId, String password, int privilege) {
+		ModelAndView mov = new ModelAndView();
+		mov.setViewName("/manage/shopmanage");
+		return mov;
+	}
+
+	/**
+	 * app版本信息（含关于我们）
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/appversion")
+	public ModelAndView appVer() {
+		ModelAndView mov = new ModelAndView();
+		mov.addObject("edit", false);
+		mov.addAllObjects(maCommonService.getVersion());
+		mov.setViewName("/manage/version");
+		return mov;
+	}
+
+	@RequestMapping("/editversion")
+	public ModelAndView editVer(String innerversion, String userversion, String aboutus, MultipartFile apkfile) {
+		ModelAndView mov = new ModelAndView();
+		mov.addObject("edit", true);
+		long fileid = getFileId(apkfile, 3);
+		mov.addAllObjects(maCommonService.editVersion(innerversion, userversion, aboutus, fileid));
+		mov.setViewName("redirect:/manage/appversion");
+		return mov;
+	}
+
+	/**
+	 * 查看意见反馈
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/feedback")
+	public ModelAndView feedback(Integer pageIndex) {
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		QueryResult<Feedback> result = maCommonService.getFeedBack(pageIndex, Constants.ADMINLISTNUM);
+		if(result.getDataList() == null && result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/manage/feedback?pageIndex="+pageIndex);
+				return mov;
+			}
+		}
+		long pageCount = (result.getTotal() + Constants.ADMINLISTNUM-1)/Constants.ADMINLISTNUM;
+		mov.addObject("dataList", result.getDataList());
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.setViewName("/manage/feedback");
+		return mov;
+	}
+
+	/**
+	 * 查看banner
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/bannerlist")
+	public ModelAndView bannerlist() {
+		ModelAndView mov = new ModelAndView();
+		mov.addObject("banner", maCommonService.getBanner());
+		mov.setViewName("/manage/banner");
+		return mov;
+	}
+
+	/**
+	 * 编辑
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/editbanner")
+	public ModelAndView editbanner(Long b_id, String url, MultipartFile imgfile) {
+		ModelAndView mov = new ModelAndView();
+		if (b_id != null) {
+			if(imgfile != null && !imgfile.isEmpty()){
+				maCommonService.editBanner(b_id, url, getFileId(imgfile, false, 1));
+			}
+		} else {
+			if(imgfile != null && !imgfile.isEmpty()){
+				maCommonService.addBanner(url, getFileId(imgfile, false, 1));
+			}
+		}
+		mov.addObject("banner", maCommonService.getBanner());
+		mov.setViewName("redirect:/manage/bannerlist");
+		return mov;
+	}
+	
+	@RequestMapping("/delbanner")
+	public void delbanner(Long id, HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		String message = "";
+		if(id == null){
+			result.put("code", 102);
+			message = "广告不存在";
+			result.put("message", message);
+			CommonUtils.setMaptoJson(response, result);
+			return;
+		}else{
+			Advert advert  = maCommonService.getAdvert(id);
+			if(advert == null){
+				result.put("code", 102);
+				message = "广告不存在";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}else{
+				maCommonService.delAdvert(advert);
+				result.put("code", 1);
+				message = "删除成功";
+				result.put("message", message);
+				CommonUtils.setMaptoJson(response, result);
+				return;
+			}
+		}
+	}
+}

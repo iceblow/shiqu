@@ -1,0 +1,338 @@
+package com.daoshun.shiqu.pojo;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+@Entity
+@Table(name = "t_stroe")
+public class Store {
+
+	// 餐厅id
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "store_id", length = 20, nullable = false)
+	private long store_id;
+	// 餐厅名称
+	@Column(name = "store_name", length = 500)
+	private String store_name;
+	// 简介
+	@Column(name = "intro", length = 500)
+	private String intro;
+	// 餐厅图片
+	@Column(name = "pic", length = 20, nullable = false)
+	private long pic;
+	// 分类id
+	@Column(name = "category_id", length = 20, nullable = false)
+	private long category_id;
+	// 分类名称（更新时要更新）
+	@Column(name = "category_name")
+	private String category_name;
+	// 纬度
+	@Column(name = "latitude")
+	private double latitude;
+	// 经度
+	@Column(name = "longitude")
+	private double longitude;
+	// 商家服务电话
+	@Column(name = "phone", length = 20)
+	private String phone;
+	/*
+	 * @Column(name = "province") private String province;
+	 * 
+	 * @Column(name = "city") private String city;
+	 * 
+	 * @Column(name = "area") private String area;
+	 */
+	// 发车省份ID
+	@Column(name = "provienceid")
+	private long provienceid;
+	// 发车城市ID
+	@Column(name = "cityid")
+	private long cityid;
+	// 发车区域ID
+	@Column(name = "areaid")
+	private long areaid;
+	
+	// 商家区域（直接存成xx省xx市xx区）
+	@Column(name = "area")
+	private String area;
+	// 商家地址
+	@Column(name = "address", length = 500)
+	private String address;
+	// 开业时间
+	@Column(name = "open_time")
+	private String open_time;
+	// 停业时间
+	@Column(name = "close_time")
+	private String close_time;
+	// 销量总数（订单总数）
+	@Column(name = "sales_num")
+	private long sales_num;
+	// 是否支持外卖-----------
+	@Column(name = "is_out", length = 1)
+	private int is_out;
+	// 送货时间（分）
+	@Column(name = "send_time")
+	private int send_time;
+	// 最低消费
+	@Column(name = "min_send")
+	private float min_send;
+	// 外送费
+	@Column(name = "send_money")
+	private float send_money;
+	// 更新时间
+	@Column(name = "update_time")
+	private Date update_time;
+	// 创建时间
+	@Column(name = "create_time")
+	private Date create_time;
+	// 图片地址
+	@Transient
+	private String pic_url;
+	// 是否收藏
+	@Transient
+	private int is_collect;
+	@Transient
+	private List<String> pic_list;
+
+	@Transient
+	private List<StorePic> storepic_list;
+	// 分类
+	// @Transient
+	// private List<String> category_list;
+	// 图片集
+	// @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	// @OrderBy(value = "id ASC")
+	// private List<StorePic> storePics = new ArrayList<StorePic>();
+	// 菜单
+	// @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	// private List<Menu> menuList = new ArrayList<Menu>();
+	// 桌位
+	// @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	// @OrderBy(value = "table_id ASC")
+	// private List<StoreTable> table_list = new ArrayList<StoreTable>();
+	public long getStore_id() {
+		return store_id;
+	}
+
+	public void setStore_id(long store_id) {
+		this.store_id = store_id;
+	}
+
+	public String getStore_name() {
+		return store_name;
+	}
+
+	public void setStore_name(String store_name) {
+		this.store_name = store_name;
+	}
+
+	public String getIntro() {
+		return intro;
+	}
+
+	public void setIntro(String intro) {
+		this.intro = intro;
+	}
+
+	public long getPic() {
+		return pic;
+	}
+
+	public void setPic(long pic) {
+		this.pic = pic;
+	}
+
+	public double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(double latitude) {
+		this.latitude = latitude;
+	}
+
+	public double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(double longitude) {
+		this.longitude = longitude;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public int getIs_out() {
+		return is_out;
+	}
+
+	public void setIs_out(int is_out) {
+		this.is_out = is_out;
+	}
+
+	public int getSend_time() {
+		return send_time;
+	}
+
+	public void setSend_time(int send_time) {
+		this.send_time = send_time;
+	}
+
+	public float getMin_send() {
+		return min_send;
+	}
+
+	public void setMin_send(float min_send) {
+		this.min_send = min_send;
+	}
+
+	public float getSend_money() {
+		return send_money;
+	}
+
+	public void setSend_money(float send_money) {
+		this.send_money = send_money;
+	}
+
+	public Date getUpdate_time() {
+		return update_time;
+	}
+
+	public void setUpdate_time(Date update_time) {
+		this.update_time = update_time;
+	}
+
+	public List<String> getPic_list() {
+		return pic_list;
+	}
+
+	public void setPic_list(List<String> pic_list) {
+		this.pic_list = pic_list;
+	}
+
+	public String getPic_url() {
+		return pic_url;
+	}
+
+	public void setPic_url(String pic_url) {
+		this.pic_url = pic_url;
+	}
+
+	public int getIs_collect() {
+		return is_collect;
+	}
+
+	public void setIs_collect(int is_collect) {
+		this.is_collect = is_collect;
+	}
+
+	public long getSales_num() {
+		return sales_num;
+	}
+
+	public void setSales_num(long sales_num) {
+		this.sales_num = sales_num;
+	}
+
+	public long getCategory_id() {
+		return category_id;
+	}
+
+	public void setCategory_id(long category_id) {
+		this.category_id = category_id;
+	}
+
+	public String getCategory_name() {
+		return category_name;
+	}
+
+	public void setCategory_name(String category_name) {
+		this.category_name = category_name;
+	}
+
+	public Date getCreate_time() {
+		return create_time;
+	}
+
+	public void setCreate_time(Date create_time) {
+		this.create_time = create_time;
+	}
+
+	public String getArea() {
+		return area;
+	}
+
+	public void setArea(String area) {
+		this.area = area;
+	}
+
+	public String getOpen_time() {
+		return open_time;
+	}
+
+	public void setOpen_time(String open_time) {
+		this.open_time = open_time;
+	}
+
+	public String getClose_time() {
+		return close_time;
+	}
+
+	public void setClose_time(String close_time) {
+		this.close_time = close_time;
+	}
+
+	public List<StorePic> getStorepic_list() {
+		return storepic_list;
+	}
+
+	public void setStorepic_list(List<StorePic> storepic_list) {
+		this.storepic_list = storepic_list;
+	}
+
+	public long getProvienceid() {
+		return provienceid;
+	}
+
+	public void setProvienceid(long provienceid) {
+		this.provienceid = provienceid;
+	}
+
+	public long getCityid() {
+		return cityid;
+	}
+
+	public void setCityid(long cityid) {
+		this.cityid = cityid;
+	}
+
+	public long getAreaid() {
+		return areaid;
+	}
+
+	public void setAreaid(long areaid) {
+		this.areaid = areaid;
+	}
+	
+}

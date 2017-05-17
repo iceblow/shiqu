@@ -1,0 +1,190 @@
+@charset "utf-8";
+body{
+	font-family: "微软雅黑";
+	font-size: 14px;
+}
+
+#content{
+	width: 96%;
+	margin: 0 auto;
+}
+
+.delbutton{
+	width: 85px; 
+	height: 40px;
+	line-height: 40px; 
+	text-align: center;
+	color: #fff; 
+	background: #f83a22;
+	cursor: pointer;
+	float:left;
+}
+
+.addbutton{
+	width: 85px; 
+	height: 40px;
+	line-height: 40px; 
+	text-align: center;
+	color: #fff; 
+	background: #35aa47;
+	cursor: pointer;
+	float:left;
+}
+
+table tr{
+	height: 47px;
+}
+
+table th{
+	text-align: center;
+}
+
+.tablehead{
+	background: #e5e6ea;
+	color: #464c69;
+	font-weight: bold;
+	line-height: 47px;
+}
+
+.tablehead th{
+	color: #464c69;
+	font-weight: bold;
+}
+
+.border_right{
+	border-right: 1px solid #ddd;
+}
+
+.tablethcss{
+	color: #333333;
+    font-weight: lighter;
+}
+
+.table_del_button{
+	float:left;
+	width: 56px;
+	height: 26px; 
+	cursor: pointer;
+}
+
+.table_button_del_icon{
+	width: 24px;
+	height: 100%;
+	float:left;
+	background-image:url(../imgs/delicon.png); 
+	background-repeat:no-repeat; 
+	background-size: 9px 12px; 
+	background-position: center;
+}
+.table_editor_button{
+	float:left;
+	width: 56px;
+	height: 26px; 
+	cursor: pointer;
+}
+
+.table_button_editor_icon{
+	width: 24px;
+	height: 100%;
+	float:left;
+	background-image:url(../imgs/editoricon.png); 
+	background-repeat:no-repeat; 
+	background-size: 9px 12px; 
+	background-position: center;
+}
+
+.table_button_text{
+	float: left; 
+	text-align: center;
+	line-height: 26px;
+	font-size: 12px;
+}
+
+.alert{
+	background: #fff;
+ 	position: fixed; 
+ 	padding: 0px;
+ 	border-radius: 0px;
+}
+
+.searchbutton{
+	width: 54px; 
+	height: 40px;
+	float: right;
+	cursor: pointer;
+	background: url(../imgs/searchicon.png);
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+/*********************以上为共通****************************/
+
+.detailItem{
+	width: 100%;
+	height: 74px;
+	border-bottom: 1px solid #e5e6ea;
+}
+
+.detailItemLeft{
+	width: 7%;
+	height: 100%;
+	line-height: 74px;
+	text-align: right;
+	float: left;
+	font-weight: bold;
+}
+
+.detailItemRight{
+	width: 92%;
+	height: 100%;
+	float: left;
+	border-left: 1px solid #e5e6ea;
+}
+
+.detailItemRight input{
+	width: 16%;
+	height: 33px;
+	border: 1px solid #bdc6d7;
+	margin-left: 1%;
+	margin-top: 20px;
+	padding-left: 5px;
+}
+
+.detailItemRight select{
+	width: 16%;
+	height: 33px; 
+	border: 1px solid #bdc6d7;
+	margin-left: 1%;
+	margin-top: 20px;
+}
+
+.saveorupdate{
+	width: 185px; 
+	height: 60px; 
+	line-height: 60px; 
+	text-align: center; 
+	background: #6097fb; 
+	color: #fff; 
+	cursor: pointer; 
+	margin-left: 9%;
+}
+
+.clearinput{
+	width: 185px; 
+	height: 60px; 
+	line-height: 60px; 
+	text-align: center; 
+	background: #929a9e; 
+	color: #fff; 
+	cursor: pointer; 
+	margin-left: 30px;
+}
+
+.detailItemRight textarea{
+	width: 68%; 
+	height: 102px;
+	margin-left: 1%;
+	margin-top: 23px;
+	border: 1px solid #bdc6d7;
+}
+/**********************以上为内容详细************************/

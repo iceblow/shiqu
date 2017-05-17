@@ -1,0 +1,247 @@
+package com.daoshun.shiqu.controller.shop;
+
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.PrintInfo;
+import com.daoshun.shiqu.pojo.StoreArea;
+import com.daoshun.shiqu.pojo.StoreTable;
+import com.daoshun.shiqu.service.PrintService;
+import com.daoshun.shiqu.service.StoreTableService;
+
+@Controller
+@RequestMapping("/shop")
+public class TableManage {
+
+	@Resource(name="storeTableService")
+	StoreTableService storeTableService;
+	
+	@Resource(name="printService")
+	PrintService printService;
+	
+	@RequestMapping("/tablearea")
+	public ModelAndView tablearea(Integer pageIndex,HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if(pageIndex==null){
+			pageIndex = 1;
+		}
+		QueryResult<StoreArea> result = storeTableService.getStoreAreaList(shopid, pageIndex, Constants.SHOPLISTNUM);
+		List<StoreArea> arealist = result.getDataList();
+		if(pageIndex>1){
+			if(arealist==null||arealist.size()==0){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/tablearea?pageIndex="+pageIndex);
+			}
+		}
+		long pageCount = ( result.getTotal() + Constants.SHOPLISTNUM - 1 ) / Constants.SHOPLISTNUM ;
+		mov.addObject("arealist",arealist);
+		mov.addObject("pageCount",pageCount);
+		mov.addObject("pageIndex",pageIndex);
+		
+		return mov;
+	}
+	
+	@RequestMapping("/edittablearea")
+	public ModelAndView edittablearea(Long id,HttpSession session ){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if(id!=null&&id>0){
+			StoreArea storearea = storeTableService.getStoreAreaById(id);
+			mov.addObject("area",storearea);
+		}
+		List<PrintInfo> printlist = printService.getPrintListByStoreId(shopid);
+		mov.addObject("printlist",printlist);
+		mov.setViewName("/shop/edittablearea");
+		return mov;
+	}
+	
+	@RequestMapping("/savetablearea")
+	public ModelAndView savetablearea(StoreArea storearea,HttpSession session ){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if(storearea.getId()>0){
+			StoreArea updatestorearea = storeTableService.getStoreAreaById(storearea.getId());
+			updatestorearea.setArea_name(storearea.getArea_name());
+			updatestorearea.setPrint_id1(storearea.getPrint_id1());
+			updatestorearea.setPrint_id2(storearea.getPrint_id2());
+			updatestorearea.setPrint_id3(storearea.getPrint_id3());
+			storeTableService.saveStoreArea(updatestorearea);
+		}else{
+			storearea.setStore_id(shopid);
+			storeTableService.saveStoreArea(storearea);
+		}
+		mov.setViewName("redirect:/shop/tablearea");
+		return mov;
+	}
+	
+	@RequestMapping("/deltablearea")
+	public ModelAndView deltablearea(Long[] id,HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		storeTableService.delStoreArea(id, shopid);
+		mov.setViewName("redirect:/shop/tablearea");
+		return mov;
+	}
+	
+	@RequestMapping("/table")
+	public ModelAndView table(Integer area_id,String keyword,Integer pageIndex,HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if(pageIndex==null){
+			pageIndex = 1;
+		}
+		QueryResult<StoreTable> result = storeTableService.getTableListByStoreid(area_id,keyword, shopid,pageIndex,Constants.SHOPLISTNUM);
+		List<StoreTable> tablelist = result.getDataList();
+		if(pageIndex>1){
+			if(tablelist==null||tablelist.size()==0){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/table?pageIndex="+pageIndex+"&area_id="+area_id+"&keyword="+keyword);
+				return mov;
+			}
+		}
+		long pageCount = ( result.getTotal() + Constants.SHOPLISTNUM - 1 )/Constants.SHOPLISTNUM;
+		List<StoreArea> arealist = storeTableService.getAreaListByStoreId(shopid);
+		mov.addObject("arealist", arealist);
+		mov.addObject("tablelist", tablelist);
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("area_id", area_id);
+		mov.addObject("keyword", keyword);
+		return mov;
+	}
+	
+	@RequestMapping("/edittable")
+	public ModelAndView edittable(Long id,HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if(id!=null&&id>0){
+			StoreTable storetable = storeTableService.getStoreTableById(id);
+			mov.addObject("storetable", storetable);
+		}
+		List<StoreArea> arealist = storeTableService.getAreaListByStoreId(shopid);
+		mov.addObject("arealist", arealist);
+		mov.setViewName("/shop/edittable");
+		return mov;
+	}
+	
+	@RequestMapping("/savetable")
+	public ModelAndView savetable(StoreTable storetable,HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if(storetable.getTable_id()>0){
+			StoreTable updatetable = storeTableService.getStoreTableById(storetable.getTable_id());
+			if(updatetable!=null){
+				updatetable.setArea_id(storetable.getArea_id());
+				updatetable.setNum(storetable.getNum());
+				updatetable.setTable_no(storetable.getTable_no());
+				storeTableService.updateStoreTable(updatetable);
+			}
+		}else{
+			storetable.setState(1);
+			storetable.setStore_id(shopid);
+			storeTableService.addStoreTable(storetable);
+		}
+		mov.setViewName("redirect:/shop/table");
+		return mov;
+	}
+	
+	
+	@RequestMapping("/deltable")
+	public ModelAndView deltable(Long[] id,HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		storeTableService.delStoreTable(id, shopid);
+		mov.setViewName("redirect:/shop/table");
+		return mov;
+	}
+	
+	@RequestMapping("/tablemanage")
+	public ModelAndView tablemanage(Long area_id,HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		List<StoreArea> arealist = storeTableService.getAreaListByStoreId(shopid);
+		mov.addObject("arealist", arealist);
+		if(area_id==null){
+			if(arealist!=null&&arealist.size()>0){
+				area_id = arealist.get(0).getId();
+			}
+		}
+		mov.addObject("area_id", area_id);
+		if(area_id!=null&&area_id>0){
+			List<StoreTable> storetable = storeTableService.getStoreTableList(shopid, area_id);
+			mov.addObject("storetable", storetable);
+		}
+		long freecount = storeTableService.getTableCount(shopid, 1);
+		mov.addObject("freecount", freecount);
+		long usecount = storeTableService.getTableCount(shopid, 2);
+		mov.addObject("usecount", usecount);
+		long ordercount = storeTableService.getTableCount(shopid, 3);
+		mov.addObject("ordercount", ordercount);
+		long unusecount = storeTableService.getTableCount(shopid, 4);
+		mov.addObject("unusecount", unusecount);
+		long allcount = freecount+usecount+ordercount+unusecount;
+		mov.addObject("allcount", allcount);
+		return mov;
+	}
+	
+	@RequestMapping("/precheckout")
+	public void precheckout(Long order_id,HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		if(order_id!=null){
+			storeTableService.sendOrderPrint(order_id);
+		}
+		result.put("code", 1);
+		CommonUtils.setMaptoJson(response, result);
+	}
+	
+	@RequestMapping("/cleantable")
+	public void cleantable(Long table_id,HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		if(table_id!=null){
+			int code = storeTableService.cleanTable(table_id);
+			result.put("code", code);
+			if(code!=1){
+				if(code==99){
+					result.put("message", "空闲桌台无需清台!");
+				}else{
+					result.put("message", "桌台有订单未完成，清台失败!");
+				}
+			}
+		}
+		CommonUtils.setMaptoJson(response, result);
+	}
+	
+	@RequestMapping("/ordertable")
+	public void ordertable(Long table_id,HttpServletResponse response){
+		HashMap<String,Object> result = new HashMap<String,Object>();
+		if(table_id!=null){
+			StoreTable storetable = storeTableService.getStoreTableById(table_id);
+			if(storetable==null){
+				result.put("code", 100);
+				result.put("message", "桌台信息错误，预定失败!");
+			}else{
+				if(storetable.getState()!=1){
+					result.put("code", 100);
+					result.put("message", "非空闲桌台无法接受预定，预定失败!");
+				}else{
+					storetable.setState(3);
+					storeTableService.updateStoreTable(storetable);
+					result.put("code", 1);
+				}
+			}
+		}
+		CommonUtils.setMaptoJson(response, result);
+	}
+}

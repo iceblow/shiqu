@@ -1,0 +1,324 @@
+package com.daoshun.shiqu.controller.shop;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.controller.ApiBaseController;
+import com.daoshun.shiqu.pojo.AreaInfo;
+import com.daoshun.shiqu.pojo.PrintInfo;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreCategory;
+import com.daoshun.shiqu.pojo.StorePic;
+import com.daoshun.shiqu.pojo.StoreUser;
+import com.daoshun.shiqu.service.CommonService;
+import com.daoshun.shiqu.service.PrintService;
+import com.daoshun.shiqu.service.StoreService;
+import com.daoshun.shiqu.service.StoreUserService;
+
+@Controller
+@RequestMapping("/shop")
+public class ShopManage extends ApiBaseController {
+
+	@Resource(name = "storeService")
+	StoreService storeService;
+	@Resource(name = "commonService")
+	CommonService commonService;
+	@Resource(name = "printService")
+	PrintService printService;
+	@Resource(name = "storeUserService")
+	StoreUserService storeUserService;
+
+	@RequestMapping("/detail")
+	public ModelAndView detail(HttpSession session) {
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		Store store = storeService.getStoreById(shopid);
+		ModelAndView mov = new ModelAndView();
+		mov.addObject("store", store);
+		mov.setViewName("/shop/shopDetail");
+		return mov;
+	}
+
+	@RequestMapping("/lookdetail")
+	public ModelAndView lookdetail(String phone, String password, HttpSession session) {
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		Store store = storeService.getStoreById(shopid);
+		List<StoreCategory> categorylist = storeService.getCategory();
+		ModelAndView mov = new ModelAndView();
+		List<AreaInfo> proviencelist = commonService.getAreaByParentid(0);
+		mov.addObject("categorylist", categorylist);
+		mov.addObject("proviencelist", proviencelist);
+		if (store.getProvienceid() > 0) {
+			List<AreaInfo> citylist = commonService.getAreaByParentid(store.getProvienceid());
+			mov.addObject("citylist", citylist);
+		}
+		if (store.getCityid() > 0) {
+			List<AreaInfo> arealist = commonService.getAreaByParentid(store.getCityid());
+			mov.addObject("arealist", arealist);
+		}
+		mov.addObject("store", store);
+		mov.setViewName("/shop/shopEdit");
+		return mov;
+	}
+
+	@RequestMapping("/savestore")
+	public ModelAndView savestore(Store store, Long[] picid) {
+		ModelAndView mov = new ModelAndView();
+		Store updatestore = storeService.getStoreById(store.getStore_id());
+		updatestore.setStore_name(store.getStore_name());
+		updatestore.setIntro(store.getIntro());
+		updatestore.setPic(store.getPic());
+		updatestore.setCategory_id(store.getCategory_id());
+		if(store.getCategory_id()>0){
+			StoreCategory storecategory = storeService.getStoreCategoryById(store.getCategory_id());
+			if(storecategory!=null){
+				updatestore.setCategory_name(storecategory.getName());
+			}
+		}
+		updatestore.setLatitude(store.getLatitude());
+		updatestore.setLongitude(store.getLongitude());
+		updatestore.setPhone(store.getPhone());
+		updatestore.setProvienceid(store.getProvienceid());
+		updatestore.setCityid(store.getCityid());
+		updatestore.setAreaid(store.getAreaid());
+		String area = "";
+		if (store.getProvienceid() > 0) {
+			AreaInfo areainfo = commonService.getAreaInfoById(store.getProvienceid());
+			area += areainfo.getName();
+		}
+		if (store.getCityid() > 0) {
+			AreaInfo areainfo = commonService.getAreaInfoById(store.getCityid());
+			area += areainfo.getName();
+		}
+		if (store.getAreaid() > 0) {
+			AreaInfo areainfo = commonService.getAreaInfoById(store.getAreaid());
+			area += areainfo.getName();
+		}
+		updatestore.setArea(area);
+		updatestore.setAddress(store.getAddress());
+		updatestore.setOpen_time(store.getOpen_time());
+		updatestore.setClose_time(store.getClose_time());
+		updatestore.setIs_out(store.getIs_out());
+		updatestore.setSend_time(store.getSend_time());
+		updatestore.setMin_send(store.getMin_send());
+		updatestore.setSend_money(store.getSend_money());
+		updatestore.setUpdate_time(new Date());
+		storeService.updateStore(updatestore);
+		List<StorePic> oldstorepic = updatestore.getStorepic_list();
+		List<Long> oldpicid = new ArrayList<Long>();
+		for (StorePic storepic : oldstorepic) {
+			oldpicid.add(storepic.getPic_id());
+		}
+		List<Long> clist = new ArrayList<Long>();
+		if(oldpicid!=null&&oldpicid.size()>0){
+			clist.addAll(oldpicid);
+		}
+		List<Long> newpicid = null;
+		if(picid!=null){
+			newpicid = new ArrayList(Arrays.asList(picid));
+			if(oldpicid!=null&&oldpicid.size()>0){
+				oldpicid.removeAll(newpicid);
+			}
+		}
+		if(clist!=null&&clist.size()>0){
+			if(newpicid!=null&&newpicid.size()>0){
+				newpicid.removeAll(clist);
+			}
+		}
+		storeService.updateStorePic(oldpicid, newpicid, store.getStore_id());
+		mov.setViewName("redirect:/shop/detail");
+		return mov;
+	}
+
+	@RequestMapping("/imgupload")
+	public void imgupload(HttpServletResponse response, @RequestParam(value = "imgfile", required = false) MultipartFile imgfile) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		if (imgfile != null && !imgfile.isEmpty()) {
+			long picid = getFileId(imgfile, 1);
+			result.put("code", 1);
+			result.put("picid", picid);
+		}
+		CommonUtils.setMaptoJson(response, result);
+	}
+
+	@RequestMapping("/print")
+	public ModelAndView print(Integer pageIndex, HttpSession session) {
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if (pageIndex == null) {
+			pageIndex = 1;
+		}
+		ModelAndView mov = new ModelAndView();
+		QueryResult<PrintInfo> result = printService.getPrintListByStoreId(shopid, pageIndex, Constants.SHOPLISTNUM);
+		List<PrintInfo> printlist = result.getDataList();
+		if (pageIndex > 1) {
+			if (printlist != null && printlist.size() == 0) {
+				pageIndex--;
+				mov.setViewName("redirect:/shop/print?pageIndex=" + pageIndex);
+				return mov;
+			}
+		}
+		long pageCount = (result.getTotal() + Constants.SHOPLISTNUM - 1) / Constants.SHOPLISTNUM;
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("printlist", printlist);
+		mov.setViewName("/shop/print");
+		return mov;
+	}
+
+	@RequestMapping("/editprint")
+	public ModelAndView editprint(Integer id, HttpSession session) {
+		ModelAndView mov = new ModelAndView();
+		if (id != null && id > 0) {
+			PrintInfo print = printService.getPrintInfoById(id);
+			long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+			if (print.getStore_id() != shopid) {
+				mov.setViewName("redirect:/shop/print");
+			} else {
+				mov.addObject("print", print);
+			}
+		}
+		return mov;
+	}
+
+	@RequestMapping("/saveprint")
+	public ModelAndView saveprint(PrintInfo print, HttpSession session) {
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		print.setStore_id(shopid);
+		printService.savePrint(print);
+		mov.setViewName("redirect:/shop/print");
+		return mov;
+	}
+
+	@RequestMapping("/delprint")
+	public ModelAndView delprint(Long[] id) {
+		ModelAndView mov = new ModelAndView();
+		printService.delPrint(id);
+		mov.setViewName("redirect:/shop/print");
+		return mov;
+	}
+	
+	@RequestMapping("/storeuser")
+	public ModelAndView storeuser(Integer pageIndex, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		if(pageIndex == null){
+			pageIndex = 1;
+		}
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		QueryResult<StoreUser> result = storeUserService.getStoreUserListByStorePage(shopid, pageIndex, Constants.SHOPLISTNUM);
+		if(result.getDataList() == null || result.getDataList().size() == 0){
+			if(pageIndex > 1){
+				pageIndex--;
+				mov.setViewName("redirect:/shop/storeuser?pageIndex="+pageIndex);
+			}
+		}
+		List<StoreUser> storeuserlist = result.getDataList();
+		long pageCount = (result.getTotal() + Constants.SHOPLISTNUM - 1) / Constants.SHOPLISTNUM;
+		mov.addObject("pageIndex", pageIndex);
+		mov.addObject("pageCount", pageCount);
+		mov.addObject("storeuserlist", storeuserlist);
+		mov.setViewName("shop/storeuserlist");
+		return mov;
+	}
+	
+	@RequestMapping("/editorStoreUser")
+	public ModelAndView editorStoreUser(Long id, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		if(id != 0){
+			StoreUser storeuser = storeUserService.getStoreUserById(id);
+			mov.addObject("storeuser", storeuser);
+		}
+		mov.setViewName("shop/editorStoreUser");
+		return mov;
+	}
+	
+	@RequestMapping("/saveorupdateStoreUser")
+	public ModelAndView saveorupdateStoreUser(StoreUser storeuser, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long shopid = CommonUtils.parseInt(String.valueOf(session.getAttribute("shopid")), 0);
+		if(storeuser.getId() == 0){
+			StoreUser user = new StoreUser();
+			user.setDiscount(storeuser.getDiscount());
+			user.setName(storeuser.getName());
+			user.setPassword(CommonUtils.MD5(storeuser.getPassword()));
+			user.setPhone(storeuser.getPhone());
+			user.setPrivilege(storeuser.getPrivilege());
+			user.setStore_id(shopid);
+			storeUserService.addStoreUser(user);
+		}else{
+			StoreUser user = storeUserService.getStoreUserById(storeuser.getId());
+			user.setDiscount(storeuser.getDiscount());
+			user.setName(storeuser.getName());
+			user.setPassword(CommonUtils.MD5(storeuser.getPassword()));
+			user.setPhone(storeuser.getPhone());
+			user.setPrivilege(storeuser.getPrivilege());
+			storeUserService.updateStoreUser(user);
+		}
+		mov.setViewName("redirect:/shop/storeuser");
+		return mov;
+	}
+	
+	@RequestMapping("/delstoreuser")
+	public void delstoreuser(Long id,HttpServletResponse response){
+		StoreUser user = storeUserService.getStoreUserById(id);
+		if(user != null){
+			storeUserService.delStoreUser(user);
+			CommonUtils.setResponseStr("success", response);
+		}else{
+			CommonUtils.setResponseStr("error", response);
+			return;
+		}
+	}
+	
+	@RequestMapping("/delStoreUserList")
+	public void delStoreUserList(String id,HttpServletResponse response ){
+		String[] idlist = id.split(",");
+		if(idlist != null && idlist.length > 0){
+			for (String strid : idlist) {
+				StoreUser user = storeUserService.getStoreUserById(CommonUtils.parseLong(strid, 0));
+				if(user != null){
+					storeUserService.delStoreUser(user);
+				}
+			}
+		}
+		CommonUtils.setResponseStr("success", response);
+	}
+	
+	@RequestMapping("/checkstoreuserphone")
+	public void checkstoreuserphone(Long id, String phone, HttpServletResponse response){
+		if(id == 0){
+			StoreUser user = storeUserService.getStoreUserByPhone(phone);
+			if(user != null){
+				CommonUtils.setResponseStr("error", response);
+				return;
+			}else{
+				CommonUtils.setResponseStr("success", response);
+				return;
+			}
+		}else{
+			StoreUser user = storeUserService.getStoreUserByPhone(phone);
+			if(user != null && user.getId() != id){
+				CommonUtils.setResponseStr("error", response);
+				return;
+			}else{
+				CommonUtils.setResponseStr("success", response);
+			}
+		}
+	}
+}

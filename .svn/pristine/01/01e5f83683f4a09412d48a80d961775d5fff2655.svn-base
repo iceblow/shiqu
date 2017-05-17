@@ -1,0 +1,351 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+ <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> 
+  <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>  
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/tablemanage.css" rel="stylesheet">
+<link href="./css/common.css" rel="stylesheet">
+<script src="./js/jquery-1.11.2.min.js"></script>
+<script>
+
+$(function(){
+	var height = document.documentElement.clientHeight-100;
+	$(".alert").height(height);
+	var content_height = height-100;
+	 var left = ($(window).width() - $(".alert").width())/3;   
+	 $(".alert").css("left",left);
+	$(".alert_content").css("height",content_height);
+	 var tableleft = ($(window).width() - $(".changeTable").width())/3;   
+	 $(".changeTable").css("left",tableleft);
+});
+
+
+function showalert(id){
+	window.top.showmask();
+	window.parent.showmask();
+	$(".mask").show();
+	$("#box_detail_"+id).show();
+}
+
+function hiddenAlert(id){
+	$("#box_detail_"+id).hide();
+	$(".mask").hide();
+	window.top.hidemask();
+	window.parent.hidemask();
+}
+
+function precheckout(order_id){
+	if(confirm("打印预结账账单?")){
+		$.ajax({
+			url:'./precheckout',
+			type:'POST',
+			data:{order_id:order_id},
+			success:function(msg){
+				alert("预结账订单打印成功!");
+			}
+		})
+	}
+}
+
+function cleantable(table_id){
+	if(confirm("确定清台?")){
+		$.ajax({
+			url:'./cleantable',
+			type:'POST',
+			data:{table_id:table_id},
+			success:function(msg){
+				var msgdata = eval("("+msg+")");
+				var code = msgdata.code;
+				if(code==1){
+					alert("清台成功!");
+					$("#box_detail_"+table_id).hide();
+					$(".mask").hide();
+					window.top.hidemask();
+					window.parent.hidemask();
+					window.location.reload();
+				}else{
+					alert(msgdata.message);
+				}
+			}
+		})
+	}
+}
+
+function ordertable(table_id){
+	if(confirm("预定桌台?")){
+		$.ajax({
+			url:'./ordertable',
+			type:'POST',
+			data:{table_id:table_id},
+			success:function(msg){
+				var msgdata = eval("("+msg+")");
+				var code = msgdata.code;
+				if(code==1){
+					alert("预定桌台成功!");
+					$("#box_detail_"+table_id).hide();
+					$(".mask").hide();
+					window.top.hidemask();
+					window.parent.hidemask();
+					window.location.reload();
+				}else{
+					alert(msgdata.message);
+				}
+			}
+		})
+	}
+}
+
+function changeTableAlert(table_id,area_name,table_no){
+	$("#box_detail_"+table_id).hide();
+	$("#changetitle").text("(原位："+area_name+" "+table_no+")");
+	$("#changeTableAlert").show();
+}
+
+function hiddenchangeAlert(){
+	$("#changeTableAlert").hide();
+	$(".mask").hide();
+	window.top.hidemask();
+	window.parent.hidemask();
+}
+</script>
+<title>桌台管理</title>
+</head>
+<body>
+<div style="width:90%;margin-left:4%;">
+<div class="stateview">
+<font style="font-weight:bold;float:left">桌台状态:</font>
+<div class="statediv" style="background-color:#5f97fa">
+全部(${allcount })
+</div>
+<div class="statediv" style="background-color:#36aa47">
+空闲(${freecount })
+</div>
+<div class="statediv" style="background-color:#f83a22">
+有客(${usecount })
+</div>
+<div class="statediv" style="background-color:#ffc000">
+预约(${ordercount })
+</div>
+<div class="statediv" style="background-color:#cbd0d2">
+不可用(${unusecount })
+</div>
+</div>
+
+<ul class="nav nav-tabs" style="margin-bottom:30px;">
+ <c:forEach items="${arealist}" var="p">
+ <c:if test="${p.id== area_id}">
+ <li role="presentation" class="active"><a href="./tablemanage?area_id=${p.id }">${p.area_name }</a></li>
+ </c:if>
+ <c:if test="${p.id!= area_id}">
+ <li role="presentation"><a href="./tablemanage?area_id=${p.id }">${p.area_name }</a></li>
+ </c:if>
+ </c:forEach>
+</ul>
+
+ <c:forEach items="${storetable}" var="p">
+<div class="tableview"  onclick="showalert(${p.table_id})">
+<c:if test="${p.state==1 }">
+<div class="tableview_name"  style="background-color:#36aa47">
+${p.table_no }
+</div>
+</c:if>
+<c:if test="${p.state==2 }">
+<div class="tableview_name"  style="background-color:#f83a22">
+${p.table_no }
+</div>
+</c:if>
+<c:if test="${p.state==3 }">
+<div class="tableview_name"  style="background-color:#ffc000">
+${p.table_no }
+</div>
+</c:if>
+<c:if test="${p.state==4 }">
+<div class="tableview_name"  style="background-color:#cbd0d2">
+${p.table_no }
+</div>
+</c:if>
+<div style="border-left:#e4e6ea 1px solid;border-right:#e4e6ea 1px solid;border-bottom:#e4e6ea 1px solid;">
+<div class="tableview_money"  >
+<img src="./imgs/money.png" style="float:left;margin-top:16px;">
+
+<div style="float:right;width:80px;font-weight:bold;">
+<c:if test="${p.state==2 }"><fmt:formatNumber value="${p.order.price }" type="currency"/>
+</c:if>
+<c:if test="${p.state!=2 }">
+￥0.00
+</c:if>
+</div>
+</div>
+<div class="tableview_people"  >
+
+<img src="./imgs/people.png" style="float:left;margin-top:13px;">
+<div style="float:right;width:80px;font-weight:bold;">
+<c:if test="${not empty p.order}">
+${p.order.people_num }
+</c:if>
+<c:if test="${empty p.order}">
+0
+</c:if>
+</div>
+</div>
+</div>
+</div>
+</c:forEach>
+</div>
+</body>
+
+<c:forEach items="${storetable}" var="p">
+<!-- 地图弹窗 -->
+<div id="box_detail_${p.table_id }" class="alert" style="display: none;">
+<div style="background-color:#f5f6fa;width:100%;height:50px;line-height:50px;padding-left:20px;font-size:14px;font-family:'宋体';font-weight: bold;">
+${p.table_no }
+<img src="./imgs/delete.png"  style="float: right;margin-top: 11px;margin-right: 15px;cursor: pointer;" onclick="hiddenAlert(${p.table_id })">
+</div>
+<div>
+
+<div class="menu_div">
+<c:if test="${not empty p.order}">
+<div class="menu_img" onclick="precheckout(${p.order.order_id})">
+</c:if>
+<c:if test="${ empty p.order}">
+<div class="menu_img" >
+</c:if>
+<img src="./imgs/yujiezhang.png">
+<div class="menu_text" >预结账</div>
+</div>
+<img  class="ling"  src="./imgs/ling.png">
+</div>
+
+<div class="menu_div">
+<div class="menu_img">
+<img src="./imgs/songchu.png">
+<div class="menu_text">餐单送厨</div>
+</div>
+<img  class="ling"  src="./imgs/ling.png">
+</div>
+
+<c:if test="${p.state!=1 }">
+<div class="menu_div">
+<div class="menu_img" onclick="cleantable(${p.table_id })">
+<img src="./imgs/qingtai.png">
+<div class="menu_text">清台</div>
+</div>
+<img  class="ling"  src="./imgs/ling.png">
+</div>
+</c:if>
+
+<c:if test="${p.state==1 }">
+<div class="menu_div">
+<div class="menu_img" onclick="ordertable(${p.table_id })">
+<img src="./imgs/yuding.png">
+<div class="menu_text">预定</div>
+</div>
+<img  class="ling"  src="./imgs/ling.png">
+</div>
+</c:if>
+
+<c:if test="${p.state==2 }">
+<div class="menu_div">
+<div class="menu_img" onclick="changeTableAlert(${p.table_id },'${p.area_name }','${p.table_no }')">
+<img src="./imgs/zhanyong.png">
+<div class="menu_text" >占用</div>
+</div>
+<img  class="ling"  src="./imgs/ling.png">
+</div>
+
+<div class="menu_div">
+<div class="menu_img">
+<img src="./imgs/jiacai.png">
+<div class="menu_text" style="margin-top:18px">加菜</div>
+</div>
+<img  class="ling"  src="./imgs/ling.png">
+</div>
+
+<div class="menu_div">
+<div class="menu_img">
+<img src="./imgs/shouyin.png">
+<div class="menu_text"  style="margin-top:12px">收银</div>
+</div>
+</div>
+</c:if>
+</div>
+<c:if test="${not empty p.order }">
+<div style="clear:both;padding-left:20px;padding-right:20px;background-color:#f5f6fa;width:100%;height:48px;line-height:48px;border-top: 1px solid #ffffff;">
+<div class="alert_content_div" style="width:80px;">
+编号
+</div>
+<div class="alert_content_div" style="width:200px;">
+名称
+</div>
+<div class="alert_content_div" style="width:100px;">
+单价
+</div>
+<div class="alert_content_div" style="width:75px;">
+数量
+</div>
+<div class="alert_content_div" style="width:75px;">
+单位
+</div>
+<div class="alert_content_div" style="width:75px;">
+金额
+</div>
+<div class="alert_content_div" style="width:75px;">
+操作
+</div>
+</div>
+<div class="alert_content" id="alert_content" style="width:100%;overflow: auto;">
+<c:forEach items="${p.order.menu_list}" var="q" varStatus="st">
+<div style="margin-left:20px;margin-right:20px;height:49px;line-height:49px;border-bottom: 1px solid #e5e6ea;">
+<div class="alert_content_div_nobold" style="width:80px;">
+${st.index+1 }
+</div>
+<div class="alert_content_div_nobold" style="width:200px;">
+${q.menu_name }
+</div>
+<div class="alert_content_div_nobold" style="width:100px;">
+<fmt:formatNumber value="${q.price }" type="currency"/>
+</div>
+<div class="alert_content_div_nobold" style="width:75px;">
+${q.quantity }
+</div>
+<div class="alert_content_div_nobold" style="width:75px;">
+${q.unit }
+</div>
+<div class="alert_content_div_nobold" style="width:75px;">
+<fmt:formatNumber value="${q.quantity*q.price }" type="currency"/>
+</div> 
+<div class="alert_content_div_nobold" style="width:75px;">
+
+</div> 
+</div>
+</c:forEach>
+</div>
+</c:if>
+</div>
+</c:forEach>
+<div class="mask" style="display:none;"></div>
+
+<div id="changeTableAlert" class="changeTable" style="display: none;">
+<div style="background-color:#f5f6fa;width:100%;height:50px;line-height:50px;padding-left:20px;font-size:14px;font-family:'宋体';font-weight: bold;" >
+占用<font id="changetitle" style="color:red;"></font>
+<img src="./imgs/delete.png"  style="float: right;margin-top: 11px;margin-right: 15px;cursor: pointer;" onclick="hiddenchangeAlert()">
+</div>
+<div style="height:85px;line-height:85px;text-align:center;">
+<select style="float:right;margin-right:20px;margin-top:0px;" class="category" id="area_id" name="area_id">
+		<option value="0">所有区域</option>
+		<c:forEach items="${arealist}" var="p" varStatus="status">  
+		<c:if test="${area_id==p.id }">
+		<option value="${p.id }" selected="selected">${p.area_name }</option>
+		</c:if>
+		<c:if test="${area_id!=p.id }">
+		<option value="${p.id }" >${p.area_name }</option>
+		</c:if>
+		</c:forEach>
+		</select>
+</div>
+</div>
+</html>

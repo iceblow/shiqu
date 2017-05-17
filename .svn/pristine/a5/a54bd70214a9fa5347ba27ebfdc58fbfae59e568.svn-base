@@ -1,0 +1,148 @@
+/**
+ * 
+ */
+package com.daoshun.shiqu.service.manage;
+
+import java.util.Date;
+import java.util.List;
+
+import org.apache.tomcat.util.bcel.classfile.Constant;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.HeadStore;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreCategory;
+import com.daoshun.shiqu.pojo.StoreUser;
+import com.daoshun.shiqu.service.BaseService;
+import com.google.gson.JsonElement;
+
+/**
+ * 后台管理商家Service
+ * 
+ * @author qiuch
+ *
+ */
+@Service("maShopService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class MaShopService extends BaseService {
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<Store> getShopList(Integer pageIndex, String keywords, long category_id) {
+		String hql = "from Store where del_flg = 0 ";
+		if(category_id != 0){
+			hql += " and category_id ="+category_id;
+		}
+		if(!CommonUtils.isEmptyString(keywords)){
+			hql += " and store_name like '%"+keywords+"%'";
+		}
+		hql += " order by create_time desc";
+		List<Store> dataList = (List<Store>) dataDao.pageQueryViaParam(hql, Constants.ADMINLISTNUM, pageIndex, null);
+		String counthql = " select count(*) "+hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, null);
+		QueryResult<Store> result = new QueryResult<Store>(dataList, total);
+		return result;
+	}
+
+	public List<StoreCategory> getCategory() {
+		return dataDao.getAllObject(StoreCategory.class);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void editCategory(Long cid, String name) {
+		StoreCategory storeCategory = dataDao.getObjectById(StoreCategory.class, cid);
+		if (storeCategory != null) {
+			storeCategory.setName(name);
+			storeCategory.setUpdate_time(new Date());
+			dataDao.updateObject(storeCategory);
+		}
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void delCategory(Long cid) {
+		dataDao.deleteObjectById(StoreCategory.class, cid);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addCategory(String name) {
+		StoreCategory storeCategory = new StoreCategory();
+		storeCategory.setName(name);
+		storeCategory.setUpdate_time(new Date());
+		dataDao.addObject(storeCategory);
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void addShop(String store_name) {
+		Store store = new Store();
+		store.setStore_name(store_name);
+		store.setUpdate_time(new Date());
+		store.setCreate_time(new Date());
+		store.setIntro(store_name);
+		dataDao.addObject(store);
+	}
+
+	public Object getStoreUser(Long sid) {
+		if (sid != null && sid > 0) {
+			return dataDao.getFirstObjectViaParam("from StoreUser where privilege = 1 and store_id = " + sid, null);
+		}
+		return null;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public String addStoreUser(Long sid, String phone, String password) {
+		if (sid != null) {
+			StoreUser storeUser = new StoreUser();
+			storeUser.setPhone(phone);
+			storeUser.setPassword(CommonUtils.MD5(password));
+			storeUser.setStore_id(sid);
+			storeUser.setPrivilege(1);
+			dataDao.addObject(storeUser);
+			return "success";
+		} else {
+			return "error";
+		}
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public String editStoreUser(Long suserid, String phone, String password) {
+		if (suserid != null) {
+			StoreUser storeUser = dataDao.getObjectById(StoreUser.class, suserid);
+			storeUser.setPhone(phone);
+			storeUser.setPassword(CommonUtils.MD5(password));
+			// storeUser.setStore_id(sid);
+			dataDao.updateObject(storeUser);
+			return "success";
+		} else {
+			return "error";
+		}
+	}
+
+	public List<StoreCategory> getStoreCategoryList() {
+		List<StoreCategory> list = dataDao.getAllObject(StoreCategory.class);
+		return list;
+	}
+
+	public Store getStoreById(Long store_id) {
+		Store info = dataDao.getObjectById(Store.class, store_id);
+		return info;
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void updateStore(Store store) {
+		dataDao.updateObject(store);
+	}
+
+	@SuppressWarnings("unchecked")
+	public QueryResult<HeadStore> getHeadStorelistByPage(Integer pageIndex, int pageSize) {
+		String hql = " from HeadStore";
+		List<HeadStore> list = (List<HeadStore>) dataDao.pageQueryViaParam(hql, pageSize, pageIndex, null);
+		String counthql = " select count(*) "+hql;
+		long total = (long) dataDao.getFirstObjectViaParam(counthql, null);
+		QueryResult<HeadStore> result = new QueryResult<HeadStore>(list, total);
+		return result;
+	}
+}

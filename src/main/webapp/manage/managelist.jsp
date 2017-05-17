@@ -1,0 +1,287 @@
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html>
+<html>
+<head>
+<title>商户管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script type="text/javascript" src="./bootstrap/jquery-2.0.0.min.js"></script>
+<script type="text/javascript" src="./bootstrap/jquery-ui"></script>
+<link href="./bootstrap/bootstrap-combined.min.css" rel="stylesheet" media="screen">
+<link href="./css/style.css" rel="stylesheet" media="screen">
+<script type="text/javascript" src="./bootstrap/bootstrap.min.js"></script>
+<script type="text/javascript" src="./js/page.js"></script>
+<script type="text/javascript">
+	$(function() {
+		$("#menu4").addClass('active');
+	})
+	
+	function checkstore_name(){
+		var name = $("#alert_name").val();
+		if(name == ""){
+			alert("名字不能为空");
+			return false;
+		}
+		if($("#sid").val() == 0){
+			 var password = $("#password").val();
+			 if(password == ''){
+				 alert("密码不能为空");
+				 return false;
+			 }
+		}
+		 
+		 var sid = $("#sid").val();
+		 $.ajax({
+			 type: "post",
+			 url: "./checkmanagename",
+			 data: {id :sid, name :name},
+			 success: function(data){
+				if(data == "error"){
+					alert("用户名已存在");
+					return false;
+				}else{
+					$("#addForm").attr("action","./addmanage").submit();
+				}
+			 }
+		 });
+			 
+	}
+	
+	function edit(sid, name, privilege){
+		$("#sid").val(sid);
+		$("#alert_name").val(name);
+		$("#privilege").val(privilege);
+		$("#myModalLabel").text("修改后台管理员");
+		$("#addModal").modal('show');
+	}
+	
+	function del(sid){
+		if(confirm("是否删除")){
+			$.ajax({
+				type: "post",
+				url:"./delmanage",
+				data:{id :sid},
+				success: function(msg){
+					var msgdata = eval("("+msg+")");
+					var code = msgdata.code;
+					if(code == 1){
+						alert(msgdata.message);
+						window.location.reload();
+					}else{
+						alert(msgdata.message);
+						return;
+					}
+				}
+			});
+		}
+	}
+	function findshoplist(){
+		var keywords = $("#keywords").val();
+		window.location.href = "./managelist?keywords="+keywords;
+	}
+	
+	function clearinput(){
+		$("#sid").val("0");
+		$("#alert_name").val("");
+		$("#password").val("");
+		$("#myModalLabel").text("添加后台管理员");
+		$("#privilege").val(1);
+	}
+	
+	function relative(id){
+		window.location.href = "./relativeStore?id="+id;
+	}
+</script>
+</head>
+<body>
+	<div style="margin: 10px; border-width: 1px; border-style: solid; border-color: #DDD; border-collapse: separate; border-radius: 5px;">
+
+		<div class="container-fluid" style="margin-top: 10px;">
+
+
+			<div class="row-fluid">
+				<div class="span12">
+					<div class="navbar">
+						<div class="navbar-inner">
+							<div class="container-fluid">
+								<!-- <a data-target=".navbar-responsive-collapse" data-toggle="collapse" class="btn btn-navbar">
+									<span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+								</a> -->
+								<a href="#" class="brand">食趣后台管理</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+			<div class="row-fluid">
+				<div class="span2">
+					<jsp:include page="left.jsp" />
+				</div>
+				<div class="span10">
+
+
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="row-fluid">
+								<div class="span8">
+									<form class="form-search">
+										<input class="input-medium search-query" value="${keywords }" type="text" id="keywords" name="keywords" style="width: 40%" />
+										<button type="submit" class="btn" onclick="findshoplist()">查找</button>
+									</form>
+								</div>
+								<div class="span4">
+									<button class="btn btn-primary" type="button" style="float: right;" data-toggle="modal" data-target="#addModal">添加后台管理员</button>
+								</div>
+							</div>
+							<table class="table table-condensed table-hover table-bordered">
+								<thead>
+									<tr>
+										<th>后台用户</th>
+										<th>权限</th>
+										<th>操作</th>
+									</tr>
+								</thead>
+								<tbody>
+									<c:forEach items="${managelist}" var="s">
+										<tr>
+											<td>${s.name}</td>
+											<td>
+												<c:if test="${s.privilege == 1 }">管理员</c:if>
+												<c:if test="${s.privilege == 10 }">代理商</c:if>
+												<c:if test="${s.privilege == 20 }">总店长</c:if>
+											</td>
+											<td>
+												<button class="btn btn-small btn-info" type="button" onclick="edit(${s.id},'${s.name }', ${s.privilege })" style="float: left;">管理员管理</button>
+												<button class="btn btn-small btn-danger" type="button" onclick="del(${s.id})" style="float: left; margin-left: 5px;">删除</button>
+											</td>
+										</tr>
+									</c:forEach>
+								</tbody>
+							</table>
+							<c:if test="${pageCount>1}">
+								<div class="pagination pagination-centered" style="cursor: pointer;">
+								<input type="hidden" value="${pageCount }" id="pageSize" />
+                                <input type="hidden" value="${pageIndex }" id="pageIndex" />
+									<ul id="untreatedpage" >
+									</ul>
+								<script type="text/javascript">
+                                //container 容器，count 总页数 pageindex 当前页数
+                                function setPage(container, count, pageindex) {
+                                var container = container;
+                                var count = parseInt(count);
+                                var pageindex = parseInt(pageindex);
+                                var keywords = $("#keywords").val();
+                                var a = [];
+                                  //总页数少于10 全部显示,大于10 显示前3 后3 中间3 其余....
+                                  if (pageindex == 1) {
+                                      //alert(pageindex);
+                                    a[a.length] = "<li class='disabled'><a onclick=\"\" class=\"hide_page_prev unclickprev on\">&laquo;</a></li>";
+                                  } else {
+                                    a[a.length] = "<li><a onclick=\"previousPage("+pageindex+",'./managelist?keywords="+keywords+
+                                    		"&')\" class=\"page_prev\">&laquo;</a></li>";
+                                  }
+                                  function setPageList() {
+                                    if (pageindex == i) {
+                                      a[a.length] = "<li class='active'><a onclick=\"goPage('./managelist?keywords="+keywords+
+                              		"&',"+i+")\" class=\"on\">" + i + "</a></li>";
+                                    } else {
+                                      a[a.length] = "<li><a onclick=\"goPage('./managelist?keywords="+keywords+
+                              		"&',"+i+")\">" + i + "</a></li>";
+                                    }
+                                  }
+                                  //总页数小于10
+                                  if (count <= 10) {
+                                    for (var i = 1; i <= count; i++) {
+                                      setPageList();
+                                    };
+                                  } else {
+                                    //总页数大于10页
+                                    if (pageindex <= 4) {
+                                      for (var i = 1; i <= 5; i++) {
+                                        setPageList();
+                                      }
+                                      a[a.length] = "...<li><a onclick=\"goPage('./managelist?keywords="+keywords+"&',"+count+")\">" + count + "</a></li>";
+                                    } else if (pageindex >= count - 3) {
+                                      a[a.length] = "<li><a onclick=\"goPage('./managelist?keywords="+keywords+"&',1)\">1</a></li>...";
+                                      for (var i = count - 4; i <= count; i++) {
+                                        setPageList();
+                                      };
+                                    } else { //当前页在中间部分
+                                      a[a.length] = "<li><a onclick=\"goPage('./managelist?keywords="+keywords+"&',1)\">1</a></li>...";
+                                      for (var i = pageindex - 2; i <= pageindex+2; i++) {
+                                        setPageList();
+                                      }
+                                      a[a.length] = "...<li><a onclick=\"goPage('./managelist?keywords="+keywords+"&',"+count+")\">" + count + "</a></li>";
+                                    }
+                                  }
+                                  if (pageindex == count) {
+                                        a[a.length] = "<li class='disabled'><a style='border-bottom-right-radius:4px;border-top-right-radius:4px; ' onclick=\"\" class=\"hide_page_next unclicknext\">&raquo;</a></li>"+
+                                     	"<li>共"+count+"页  到第  "+
+                                        "<input type=\"text\" class=\"jump_num\" id=\"topage\" style='width: 27px; margin-bottom: 1px; height: 15px;'/> <span style='margin-right: 2px;border: 0px;'>页</span></li>"+
+                                        "<li><a style='border-left-width: 1px; border-radius: 4px;' class=\"jump_btn\" onclick=\"gotoPage('./managelist?keywords="+keywords+"&',"+$("#pageSize").val()+")\")\">确定</li>";
+                                      } else {
+                                        a[a.length] = 
+                                            "<li><a style='border-bottom-right-radius:4px;border-top-right-radius:4px; ' onclick=\"nextPage("+$("#pageIndex").val()+",'./managelist?keywords="+keywords+"&')\" "+
+                                            "class=\"page_next\">&raquo;</a></li> "+
+                                            "<li>共"+count+"页 到第 "+
+                                        "<input type=\"text\" class=\"jump_num\" id=\"topage\" style='width: 27px; margin-bottom: 1px; height: 15px;'/><span style='margin-right: 2px; border: 0px;'>页</span></li>"+
+                                        "<li><a style='border-left-width: 1px; border-radius: 4px;' class=\"jump_btn\" onclick=\"gotoPage('./managelist?keywords="+keywords+"&',"+$("#pageSize").val()+")\">确定</li>";
+                                      }
+                                  container.innerHTML = a.join("");
+                                } 
+                                setPage(document.getElementById("untreatedpage"),parseInt($("#pageSize").val()),parseInt($("#pageIndex").val()));
+                                </script>
+								</div>
+							</c:if>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+
+
+	<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true" style="display: none;">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="clearinput()">&times;</button>
+					<h4 class="modal-title" id="myModalLabel">添加后台管理员</h4>
+				</div>
+				<form action="" method="post" id="addForm">
+					<div class="container" style="margin: 20px;">
+					<input id="sid" type="hidden" name="id" value="0" />
+						<fieldset>
+							<label>后台管理员名称：</label>
+							<input type="text" name="name" id="alert_name" value="" />
+						</fieldset>
+						<fieldset>
+							<label>登录密码：</label>
+							<input id="password" type="password" name="password" value="" />
+						</fieldset>
+						<fieldset>
+							<label>权限 ：</label>
+							<select id="privilege" name="privilege">
+								<option value="1">管理员</option>
+								<option value="10">代理商</option>
+								<option value="20">总店长</option>
+							</select>
+						</fieldset>
+					</div>
+
+
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary btn-primary" onclick="checkstore_name()">添加</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal" onclick="clearinput()">关闭</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

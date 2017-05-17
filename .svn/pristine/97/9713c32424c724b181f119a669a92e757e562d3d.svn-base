@@ -1,0 +1,63 @@
+package com.daoshun.shiqu.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.daoshun.shiqu.common.QueryResult;
+import com.daoshun.shiqu.pojo.PrintInfo;
+
+/**
+ * @author wangcl
+ *
+ */
+@Service("printService")
+@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+public class PrintService extends BaseService{
+
+	/**
+	 * 
+	 * @param store_id 店铺ID
+	 * @param pageIndex
+	 * @param pageSize
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public QueryResult<PrintInfo> getPrintListByStoreId(long store_id,int pageIndex,int pageSize){
+		String hql = " from PrintInfo where store_id = "+store_id ;
+		List<PrintInfo> printlist = (List<PrintInfo>) dataDao.pageQueryViaParam(hql + "order by id desc",pageSize,pageIndex, null);
+		long count = (long) dataDao.getFirstObjectViaParam("select count(*) "+hql, null);
+		QueryResult<PrintInfo> result = new QueryResult<PrintInfo>(printlist, (int)count);
+		return result;
+	}
+	
+	public PrintInfo getPrintInfoById(long id){
+		return dataDao.getObjectById(PrintInfo.class, id);
+	}
+	
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void savePrint(PrintInfo printinfo){
+		dataDao.saveOrUpdateObject(printinfo);
+	}
+	
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void delPrint(Long[] printids){
+		for(Long printid:printids){
+			if(printid!=null){
+				PrintInfo printinfo = dataDao.getObjectById(PrintInfo.class, printid);
+				if(printinfo!=null){
+					dataDao.deleteObject(printinfo);
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<PrintInfo> getPrintListByStoreId(long store_id){
+		String hql = " from PrintInfo where store_id = "+store_id ;
+		List<PrintInfo> printlist = (List<PrintInfo>) dataDao.getObjectsViaParam(hql + "order by id desc", null);
+		return printlist;
+	}
+}

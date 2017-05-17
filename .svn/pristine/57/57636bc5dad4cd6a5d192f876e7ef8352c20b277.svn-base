@@ -1,0 +1,57 @@
+package com.daoshun.shiqu.controller.wap;
+
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.pojo.MenuCategory;
+import com.daoshun.shiqu.pojo.StoreCategory;
+import com.daoshun.shiqu.service.wap.WapStoreService;
+
+
+@Controller
+@RequestMapping("/wap")
+public class WapStore {
+
+	@Resource(name="wapStoreService")
+	WapStoreService wapStoreService;
+	
+	@RequestMapping("/storeindex")
+	public ModelAndView storeindex(){
+		ModelAndView mov = new ModelAndView();
+		List<StoreCategory> categorylist = wapStoreService.getStoreCategory();
+		mov.addObject("categorylist", categorylist);
+		mov.setViewName("/wap/storelist");
+		return mov;
+	};
+	
+	@RequestMapping("/storelist")
+	@ResponseBody
+	public HashMap<String,Object> storelist(Double lon,Double lat,String keywords, Long category_id, Integer sort, Integer pageIndex, String area){
+		if(pageIndex==null){
+			pageIndex = 1;
+		}
+		return wapStoreService.getStoreList(lon+","+lat, keywords, category_id, sort, Constants.WAPSTORELISTSIZE, pageIndex, area);
+	}
+	
+	@RequestMapping("/storedetail")
+	public ModelAndView storedetail(Long store_id){
+		ModelAndView mov = new ModelAndView();
+		if(store_id!=null&&store_id>0){
+			 List<MenuCategory> categorylist = wapStoreService.getStoreMenu(store_id);
+			 mov.addObject("categorylist", categorylist);
+			 
+		}else{
+			mov.setViewName("redirect:/wap/storeindex");
+		}
+		return mov;
+	}
+	
+}

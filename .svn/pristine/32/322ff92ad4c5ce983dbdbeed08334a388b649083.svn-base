@@ -1,0 +1,58 @@
+function shopdetail(){
+	window.location.href="./lookdetail";
+}
+
+function changeProvience(){
+	var provienceid = $("#provienceid").val();
+	if(provienceid>0){
+		$.ajax({
+			url:'./changeArea',
+			type:'POST',
+			data:{id:provienceid},
+			success:function(msg){
+				var msgdata = eval("("+msg+")");
+				var arealist = msgdata.arealist;
+				var html = "";
+				$("#cityid").empty();
+				html +="<option value='0'>--</option>";
+				for(var i=0;i<arealist.length;i++){
+					html += "<option value='"+arealist[i].id+"'>"+arealist[i].name+"</option>";
+				}
+				$("#cityid").append(html);
+			}
+		})
+	}else{
+		var html ="<option value='0'>--</option>";
+		$("#cityid").empty();
+		$("#cityid").append(html);
+		$("#areaid").empty();
+		$("#areaid").append(html);
+	}
+}
+
+function changeCity(){
+	var cityid = $("#cityid").val();
+	if(cityid>0){
+		$.ajax({
+			url:'./changeArea',
+			type:'POST',
+			data:{id:cityid},
+			success:function(msg){
+				var msgdata = eval("("+msg+")");
+				var arealist = msgdata.arealist;
+				var html = "";
+				$("#areaid").empty();
+				html +="<option value='0'>--</option>";
+				for(var i=0;i<arealist.length;i++){
+					html += "<option value='"+arealist[i].id+"'>"+arealist[i].name+"</option>";
+				}
+				$("#areaid").append(html);
+			}
+		})
+	}else{
+		$("#areaid").empty();
+		var html ="<option value='0'>--</option>";
+		$("#areaid").append(html);
+	}
+}
+

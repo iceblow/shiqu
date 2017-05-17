@@ -1,0 +1,100 @@
+package com.daoshun.shiqu.controller;
+
+import java.util.HashMap;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.service.CommonService;
+
+@Controller
+@RequestMapping("/api/common")
+public class ApiCommonController extends ApiBaseController {
+
+	@Resource(name = "commonService")
+	private CommonService commonService;
+
+	/**
+	 * 获取地区信息
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/area", produces = "application/json; charset=UTF-8")
+	public String area(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			map.putAll(commonService.getArea());
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取地区信息
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/areaver", produces = "application/json; charset=UTF-8")
+	public String areaVer(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			map.put("version", commonService.getAreaVer());
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取版本信息
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/version", produces = "application/json; charset=UTF-8")
+	public String version(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			map.putAll(commonService.getVersoin());
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+	/**
+	 * 获取关于信息
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/about", produces = "application/json; charset=UTF-8")
+	public String getAbout(HttpServletRequest request, HttpServletResponse rep) {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			request.setCharacterEncoding("utf-8");
+			map.put("about", commonService.getAbout());
+			map.putAll(Constants.SUCCESS_RESULT_MAP);
+			return gson.toJson(map);
+			// return mapper.writeValueAsString(map);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Constants.EXCEPTION;
+		}
+	}
+
+
+}

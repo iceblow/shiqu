@@ -1,0 +1,98 @@
+#content {
+    width: 96%;
+    margin: 0 auto;
+}
+.tablehead {
+    background: #e5e6ea;
+    color: #464c69;
+    font-weight: bold;
+    line-height: 47px;
+}
+.tablethcss {
+    color: #333333;
+    font-weight: lighter;
+}
+
+.border_right {
+    border-right: 1px solid #ddd;
+}
+table th {
+    text-align: center;
+}
+
+.delbutton {
+    width: 85px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    color: #fff;
+    background: #f83a22;
+    cursor: pointer;
+    float: left;
+}
+
+
+.addbutton {
+    width: 85px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    color: #fff;
+    background: #35aa47;
+    cursor: pointer;
+    float: left;
+}
+.table_del_button {
+    float: left;
+    width: 56px;
+    height: 26px;
+    cursor: pointer;
+}
+.table_button_del_icon {
+    width: 24px;
+    height: 100%;
+    float: left;
+    background-image: url(../imgs/delicon.png);
+    background-repeat: no-repeat;
+    background-size: 9px 12px;
+    background-position: center;
+}
+.table_button_text {
+    float: left;
+    text-align: center;
+    line-height: 26px;
+    font-size: 12px;
+}
+.table_editor_button {
+    float: left;
+    width: 56px;
+    height: 26px;
+    cursor: pointer;
+}
+.table_button_editor_icon {
+    width: 24px;
+    height: 100%;
+    float: left;
+    background-image: url(../imgs/editoricon.png);
+    background-repeat: no-repeat;
+    background-size: 9px 12px;
+    background-position: center;
+}
+
+table tr {
+    height: 47px;
+}
+
+.form-control {
+    border-radius: 0px;
+}
+
+.detail_submit {
+    width: 100px;
+    height: 40px;
+    background-color: #6097fb;
+    border: none;
+    border-radius: 0px;
+    background-repeat: no-repeat;
+    background-position: 5px;
+}

@@ -1,0 +1,109 @@
+package com.daoshun.shiqu.controller.wap;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.daoshun.shiqu.common.CommonUtils;
+import com.daoshun.shiqu.common.Constants;
+import com.daoshun.shiqu.netdata.OrderMenu;
+import com.daoshun.shiqu.pojo.Menu;
+import com.daoshun.shiqu.pojo.MenuCategory;
+import com.daoshun.shiqu.pojo.Store;
+import com.daoshun.shiqu.pojo.StoreCategory;
+import com.daoshun.shiqu.service.wap.WapStoreService;
+
+
+@Controller
+@RequestMapping("/wap")
+public class WapStore {
+
+	@Resource(name="wapStoreService")
+	WapStoreService wapStoreService;
+	
+	@RequestMapping("/storeindex")
+	public ModelAndView storeindex(){
+		ModelAndView mov = new ModelAndView();
+		List<StoreCategory> categorylist = wapStoreService.getStoreCategory();
+		mov.addObject("categorylist", categorylist);
+		mov.setViewName("/wap/storelist");
+		return mov;
+	};
+	
+	@RequestMapping("/storelist")
+	@ResponseBody
+	public HashMap<String,Object> storelist(Double lon,Double lat,String keywords, Long category_id, Integer sort, Integer pageIndex, String area){
+		if(pageIndex==null){
+			pageIndex = 1;
+		}
+		return wapStoreService.getStoreList(lon+","+lat, keywords, category_id, sort, Constants.WAPSTORELISTSIZE, pageIndex, area);
+	}
+	
+	@RequestMapping("/storedetail")
+	public ModelAndView storedetail(Long store_id){
+		ModelAndView mov = new ModelAndView();
+		if(store_id!=null&&store_id>0){
+			 List<MenuCategory> categorylist = wapStoreService.getStoreMenu(store_id);
+			 mov.addObject("categorylist", categorylist);
+			 mov.addObject("store_id", store_id);
+		}else{
+			mov.setViewName("redirect:/wap/storeindex");
+		}
+		return mov;
+	}
+	
+	@RequestMapping("/makeorder")
+	public ModelAndView makeorder(long store_id,Long[] menuid,Integer[] menunum){
+		ModelAndView mov = new ModelAndView();
+		List<OrderMenu> menulist = new ArrayList<OrderMenu>();
+		float allprice = 0f ;
+		for(int i=0;i<menunum.length;i++){
+			Integer num = menunum[i];
+			if(num>0){
+				Long menu_id = menuid[i];
+				Menu menu = wapStoreService.getMenuById(menu_id);
+				float price = menu.getPrice()*num;
+				allprice += price;
+				OrderMenu ordermenu = new OrderMenu();
+				ordermenu.setName(menu.getMenu_name());
+				ordermenu.setMenu_id(menu_id);
+				ordermenu.setQuantity(num);
+				ordermenu.setPrice(price);
+				menulist.add(ordermenu);
+			}
+		}
+		mov.addObject("menulist", menulist);
+		mov.addObject("allprice", allprice);
+		Store store = wapStoreService.getStoreById(store_id);
+		mov.addObject("store", store);
+		mov.setViewName("/wap/outlessorder");
+		return mov;
+	}
+	
+	@RequestMapping("/addorder")
+	public ModelAndView addorder(Integer peoplenum,String phone,String ordername,String send_time,String address,String comment,int is_out,long store_id,Long[] menuids,Integer[] quantitys,float allprice, HttpSession session){
+		ModelAndView mov = new ModelAndView();
+		long wapuserid = CommonUtils.parseLong(String.valueOf(session.getAttribute("wapuserid")), 0) ;  
+		try{
+			wapStoreService.addOrder(peoplenum,ordername,phone,address,comment,send_time,is_out,store_id,menuids,quantitys,allprice,21);
+		}catch(Exception e){
+			
+		}
+		mov.setViewName("redirect:/wap/ordersuccess");
+		return mov;
+	}
+	
+	@RequestMapping("/ordersuccess")
+	public ModelAndView ordersuccess(){
+		ModelAndView mov = new ModelAndView();
+		return mov;
+	}
+}
